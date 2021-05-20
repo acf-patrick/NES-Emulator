@@ -9,19 +9,19 @@ ifeq ($(OS), Windows_NT)
 else
 	MOVE = mv
 	CLEAN = rm -f test *.o -r obj/
+endif
 
-HEADER = imgui-1.73/ SDL2/
+HEADER = SDL2/
 
-IMGUI  = backend/imgui_impl_sdl.cpp imgui-1.73/*.cpp
 SRC = cpu6502.cpp mmu.cpp nes.cpp main.cpp
 
-SDL = -lSDL2
+SDL = -lSDL2 -lSDL2-ttf
 
 all : obj
 	@echo "... Link ..."
 	$(CXX) obj/* $(SDL) -o main
 
-obj : $(SRC) $(IMGUI)
+obj : $(SRC)
 	@echo "... Compile ..."
 	$(CXX) $(CFLAGS) -I$(HEADER) -c $?
 	@mkdir -p obj/

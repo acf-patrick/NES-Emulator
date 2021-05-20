@@ -3,6 +3,8 @@
 #include "defs.h"
 #include "mmu.h"
 
+class Nes;
+
 class Cpu6502
 {
 private:
@@ -36,4 +38,6 @@ public:
     void LDA_ABSY();         //loading A register with absolute + y addressing mode
     void LDA_IX();           //loading A register with (indirect + X) addressing mode
     void LDA_IY();           //loading A register with (indirect) + Y addressing mode
+
+friend class Nes;
 };
