@@ -1,4 +1,4 @@
-#include "defs.h"
+#include "nes.h"
 
 int main(int argc, char *argv[])
 {

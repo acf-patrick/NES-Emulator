@@ -2,7 +2,7 @@
 
 Mmu::Mmu()
 {
-    RAM = new uint8_t[0xFFFF];            //max memory size is 0xFFFF because the NES have a 16bit cpu?  
+    RAM = new Byte[0xFFFF];            //max memory size is 0xFFFF because the NES have a 16bit cpu?  
     for (int i=0; i<0xFFFF; i++)
         RAM[i] = 0;
 }
@@ -12,14 +12,14 @@ Mmu::~Mmu()
     delete(RAM);
 }
 
-uint8_t Mmu::readByte(uint16_t address)
+Byte Mmu::readByte(Word address)
 {
     return RAM[address];                     //just getting the value at RAM[address]
 }
 
-uint16_t Mmu::readWord(uint16_t address)
+Word Mmu::readWord(Word address)
 {
-    uint16_t value = (uint16_t)RAM[address+1];         //getting value at RAM[address+1] (little andian)    
+    Word value = (Word)RAM[address+1];         //getting value at RAM[address+1] (little andian)    
     value <<= 8;
     return (value |= RAM[address]);   //shifting the value by 8bit then OR it with the value at RAM[address]
     /*
@@ -30,7 +30,7 @@ uint16_t Mmu::readWord(uint16_t address)
     */
 }
 
-void Mmu::writeByte(uint8_t value, uint16_t address)            //just write value to RAM[address]
+void Mmu::writeByte(Byte value, Word address)            //just write value to RAM[address]
 {
     RAM[address] = value;
 }

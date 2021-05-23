@@ -3,9 +3,9 @@
 Cpu6502::Cpu6502(Mmu *_mmu)
 {
     A = X = Y = 0;
-    PC = 0xFFFC;    //program usually start at 0xFFFC 
-    SP = 0xFF;      //Satck grow bottom top so 0x1FF to 0x100 (in the first page memory)
-    S = 0;
+    PC = 0xFFFC;    //  program usually start at 0xFFFC 
+    SP = 0xFF;      //  Satck grow bottom top so 0x1FF to 0x100 (in the first page memory)
+    S.reset();      //  set all bits to zero
     mmu = _mmu;
     cycles = 0;
 }
@@ -20,7 +20,7 @@ void Cpu6502::reset()            //Reset members to default state
     A = X = Y = 0;
     PC = 0xFFFC;     
     SP = 0xFF;      
-    S = 0;
+    S.reset();
 }
 
 void Cpu6502::step()
@@ -76,101 +76,20 @@ void Cpu6502::step()
     std::cout << "PC = " << std::hex << (int)PC << std::endl;
     std::cout << "SP = " << std::hex << (int)SP << std::endl;
     std::cout << "S : NVB*DIZC" << std::endl;
-    std::cout << "    " << std::bitset<8>((int)S) << std::endl << std::endl;
+    std::cout << "    " << S << std::endl << std::endl;
     /*end here*/
-}
-
-
-void Cpu6502::SetFlag(bool value, char FlagName)        //set specific Flag status accordingly to value
-{
-    switch (FlagName)
-    {
-        case 'N':
-            if (value)
-                S |= 0b10000000;
-            else S &= ~0b10000000;
-        break;
-        case 'V':
-            if (value)
-                S |= 0b01000000;
-            else S &= ~0b01000000;
-        break;
-        case 'B':
-            if (value)
-                S |= 0b00100000;
-            else S &= ~0b00100000;
-        break;
-        case 'D':
-            if (value)
-                S |= 0b00001000;
-            else S &= ~0b00001000;
-        break;
-        case 'I':
-            if (value)
-                S |= 0b00000100;
-            else S &= ~0b00000100;
-        break;
-        case 'Z':
-            if (value)
-                S |= 0b00000010;
-            else S &= ~0b00000010;
-        break;
-        case 'C':
-            if (value)
-                S |= 0b00000001;
-            else S &= ~0b00000001;
-        break;
-        default:
-            std::cout << "Unknow FlagName " << FlagName << ", exiting program..." << std::endl;
-            exit(-1);
-        break;
-    }
-}
-
-
-bool Cpu6502::GetFlag(char FlagName)                    //get specific Flag status
-{
-    switch (FlagName)
-    {
-        case 'N':
-            return (S & 0b10000000);
-        break;
-        case 'V':
-            return (S & 0b01000000);
-        break;
-        case 'B':
-            return (S & 0b00100000);
-        break;
-        case 'D':
-            return (S & 0b00001000);
-        break;
-        case 'I':
-            return (S & 0b00000100);
-        break;
-        case 'Z':
-            return (S & 0b00000010);
-        break;
-        case 'C':
-            return (S & 0b00000001);
-        break;
-        default:
-            std::cout << "Unknow FlagName " << FlagName << ", exiting program..." << std::endl;
-            exit(-1);
-        break;
-    }
 }
 
 void Cpu6502::setLDAFlags()              //set specific Flag status accordingly to value
 {
-    SetFlag(false, 'C');
-    SetFlag(false, 'I');
-    SetFlag(false, 'D');
-    SetFlag(false, 'B');
-    SetFlag(false, 'V');
-    SetFlag(((A == 0) ? true : false), 'Z');                        //set if A = 0
-    SetFlag(((A & (1 << 7)) ? true : false), 'C');                  //set if bit 7 of A is set
+    S[C] = 0;           // SetFlag(false, 'C');
+    S[I] = 0;           // SetFlag(false, 'I');
+    S[D] = 0;           // SetFlag(false, 'D');
+    S[B] = 0;           // SetFlag(false, 'B');
+    S[V] = 0;           // SetFlag(false, 'V');
+    S[Z] = A == 0;      // Set if A = 0
+    S[C] = A & (1<<7);  // Set if bit 7 of A is set
 }
-
 
 void Cpu6502::LDA_IMM()                  //loading A register with immediate addressing mode
 {
