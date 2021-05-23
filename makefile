@@ -3,6 +3,16 @@
 CXX = g++-10
 CFLAGS = -std=c++2a -W
 
+ifeq ($(OS), Windows_NT)
+	MOVE = move
+	CLEAN = del /Q *.o /S obj/
+else
+	MOVE = mv
+	CLEAN = rm -f test *.o -r obj/
+
+HEADER = imgui-1.73/ SDL2/
+
+IMGUI  = backend/imgui_impl_sdl.cpp imgui-1.73/*.cpp
 SRC = cpu6502.cpp mmu.cpp nes.cpp main.cpp
 
 SDL = -lSDL2
@@ -11,11 +21,11 @@ all : obj
 	@echo "... Link ..."
 	$(CXX) obj/* $(SDL) -o main
 
-obj : $(SRC)
+obj : $(SRC) $(IMGUI)
 	@echo "... Compile ..."
-	$(CXX) $(CFLAGS) -c $?
+	$(CXX) $(CFLAGS) -I$(HEADER) -c $?
 	@mkdir -p obj/
-	@mv *.o obj/
+	@$(MOVE) *.o obj/
 
 clean : 
-	@rm -f test *.o -r obj/
+	@$(CLEAN)
