@@ -9,6 +9,7 @@ ifeq ($(OS), Windows_NT)
 else
 	MOVE = mv
 	CLEAN = rm -f test *.o -r obj/
+endif
 
 HEADER = imgui-1.73/ SDL2/
 

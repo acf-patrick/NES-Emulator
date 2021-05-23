@@ -3,7 +3,7 @@
 Cpu6502::Cpu6502(Mmu *_mmu)
 {
     A = X = Y = 0;
-    PC = 0xFFFC;    //  program usually start at 0xFFFC 
+    PC = 0xFFEC;    //  program usually start at 0xFFFC 
     SP = 0xFF;      //  Satck grow bottom top so 0x1FF to 0x100 (in the first page memory)
     S.reset();      //  set all bits to zero
     mmu = _mmu;
@@ -25,19 +25,12 @@ void Cpu6502::reset()            //Reset members to default state
 
 void Cpu6502::step()
 {
-    /* starting from here, its just for testing LDA_IX, must delete after understanding LDA_IX*/
-    X = 0x02;
-    mmu->writeByte(0xA1, 0xFFFC);
-    mmu->writeByte(0x34, 0xFFFD);
-    mmu->writeByte(0x12, 0x36);
-    mmu->writeByte(0x11, 0x12);
-    /* std::cout << std::hex << (int)mmu->readByte(0xFFFC) << std::endl;
-    std::cout << std::hex << (int)mmu->readByte(0xFFFD) << std::endl; */
-    /*end here*/
     currentOpcode = mmu->readByte(PC);      //getting the current opcode at RAM[PC] (aka: FETCHING ;-) )
-    std::cout << "CurrentOpcode: " << std::hex << (int)currentOpcode << ", at PC = " << std::hex << (int)PC << std::endl;
+    //std::cout << "CurrentOpcode: " << std::hex << (int)currentOpcode << ", at PC = " << std::hex << (int)PC << std::endl;
     switch (currentOpcode)                  //finding what the current opcode is and do the appropriate function (aka: DECODING and EXECUTING ;-) )      
     {
+
+        /*******************LOAD/STORE INSTRUCTIONS*******************/
         //LDA Instructions
         case 0xA9:
             LDA_IMM();
@@ -64,6 +57,105 @@ void Cpu6502::step()
             LDA_IY();
         break;
 
+        //LDX Instructions
+        case 0xA2:
+            LDX_IMM();
+        break;
+        case 0xA6:
+            LDX_ZP();
+        break;
+        case 0xB6:
+            LDX_ZPY();
+        break;
+        case 0xAE:
+            LDX_ABS();
+        break;
+        case 0xBE:
+            LDX_ABSY();
+        break;
+
+        //LDY Instructions
+        case 0xA0:
+            LDY_IMM();
+        break;
+        case 0xA4:
+            LDY_ZP();
+        break;
+        case 0xB4:
+            LDY_ZPX();
+        break;
+        case 0xAC:
+            LDY_ABS();
+        break;
+        case 0xBC:
+            LDY_ABSX();
+        break;
+
+        //STA Instructions
+        case 0x85:
+            STA_ZP();
+        break;
+        case 0x95:
+            STA_ZPX();
+        break;
+        case 0x8D:
+            STA_ABS();
+        break;
+        case 0x9D:
+            STA_ABSX();
+        break;
+        case 0x99:
+            STA_ABSY();
+        break;
+        case 0x81:
+            STA_IX();
+        break;
+        case 0x91:
+            STA_IY();
+        break;
+
+        //STX Instructions
+        case 0x86:
+            STX_ZP();
+        break;
+        case 0x96:
+            STX_ZPY();
+        break;
+        case 0x8E:
+            STX_ABS();
+        break;
+
+        //STY Instructions
+        case 0x84:
+            STY_ZP();
+        break;
+        case 0x94:
+            STY_ZPX();
+        break;
+        case 0x8C:
+            STY_ABS();
+        break;
+
+
+        /*******************JUMP AND CALLS INSTRUCTIONS*******************/
+        //JSR Instruction
+        case 0x20:
+            JSR();
+        break;
+        
+        //RTS Instruction
+        case 0x60:
+            RTS();
+        break;
+
+        //JMP Instruction
+        case 0x4C:
+            JMP_ABS();
+        break;
+        case 0x6C:
+            JMP_I();
+        break;
+
 
         default:
             std::cout << "Unknown Opcode : " << std::hex << currentOpcode << std::endl;
@@ -74,11 +166,34 @@ void Cpu6502::step()
     std::cout << "X = " << std::hex << (int)X << std::endl;
     std::cout << "Y = " << std::hex << (int)Y << std::endl;
     std::cout << "PC = " << std::hex << (int)PC << std::endl;
-    std::cout << "SP = " << std::hex << (int)SP << std::endl;
+    for (int i=0; i<5; i++)
+        std::cout << "[" << std::hex << (int)0x01FF - i << "] = " << std::hex << (int)mmu->readByte(0x01FF - i) << std::endl;
     std::cout << "S : NVB*DIZC" << std::endl;
     std::cout << "    " << S << std::endl << std::endl;
     /*end here*/
 }
+
+
+//Stack Useful Functions
+void Cpu6502::PushPCtoStack()
+{
+    mmu->writeByte((PC + 3) & 0xFF, 0x0100 | SP);           //writing next instruction lower byte into first page at SP (0x0100 | SP)
+    SP--;                                                   //decrementing SP because Stack grows downward
+    mmu->writeByte((PC + 3) >> 8, 0x0100 | SP);             //writing next instruction lower byte into first page at SP (0x0100 | SP)
+    SP--;                                                   //decrementing SP because Stack grows downward
+}
+
+void Cpu6502::PopPCfromStack()
+{
+    Word value = (mmu->readByte(0x0100 | (SP+1)) << 8) | mmu->readByte(0x0100 | SP+2);      //getting 2 bytes from first page at SP in little endianess
+    mmu->writeByte(0, 0x0100 | (SP+2));         //zero-ing previous value of previous stack
+    mmu->writeByte(0, 0x0100 | (SP+1));
+    SP += 2;                                    //incrementing SP by 2 because we're poping (Stack grows downard)
+    PC = value;                                 //setting PC to previous instruction to be executed before jumping 
+}
+
+
+/*****LDA INSTRUCTIONS******/
 
 void Cpu6502::setLDAFlags()              //set specific Flag status accordingly to value
 {
@@ -148,7 +263,7 @@ void Cpu6502::LDA_IX()                                                //loading 
     /* A little example here, may delete this after knowing how it works
         X = 0x04;
         RAM[PC+1] = 0x02;
-        uint16_t value = RAM[0x02 + 0x04 + 1] | RAM[0x02 + 0x04];
+        Word value = RAM[0x02 + 0x04 + 1] | RAM[0x02 + 0x04];
         A = RAM[value];
      */
 }
@@ -162,9 +277,251 @@ void Cpu6502::LDA_IY()                                                //loading 
     /* A little example here, may delete this after knowing how it works
         Y = 0x04;
         RAM[PC+1] = 0x02;
-        uint16_t value = RAM[0x02 + 1] | RAM[0x02];
+        Word value = RAM[0x02 + 1] | RAM[0x02];
         value += Y;
         A = RAM[value];
      */
 }
+
+
+/******LDX INSTRUCTIONS*****/
+
+void Cpu6502::setLDXFlags()              //set specific Flag status accordingly to value
+{
+    S[C] = 0;           // SetFlag(false, 'C');
+    S[I] = 0;           // SetFlag(false, 'I');
+    S[D] = 0;           // SetFlag(false, 'D');
+    S[B] = 0;           // SetFlag(false, 'B');
+    S[V] = 0;           // SetFlag(false, 'V');
+    S[Z] = X == 0;      // Set if X = 0
+    S[C] = X & (1<<7);  // Set if bit 7 of X is set
+}
+
+void Cpu6502::LDX_IMM()                  //loading X register with immediate addressing mode
+{
+    X = mmu->readByte(PC+1);            //X is loaded with RAM[PC+1]
+    PC += 2;                            //PC is incremented by 2 for next instruction
+    cycles += 2;                        //instruction take 2 cycles
+    setLDXFlags();
+}
+
+void Cpu6502::LDX_ZP()                                   //loading X register with zero page addressing mode
+{
+    X = mmu->readByte(mmu->readByte(PC+1));              //X is loaded with the next 8bit value in memory aka RAM[RAM[PC+1]]
+    PC += 2;                                             //PC is incremented by 2 for next instruction
+    cycles += 3;                                         //instruction take 3 cycles
+    setLDXFlags();
+}
+
+void Cpu6502::LDX_ZPY()                                  //loading X register with zero page + Y addressing mode
+{
+    X = mmu->readByte(mmu->readByte(PC+1) + X);          //X is loaded with the next 8bit value in memory + Y aka RAM[RAM[PC+1 + Y]]
+    PC += 2;                                             //PC is incremented by 2 for next instruction
+    cycles += 4;                                         //instruction take 4 cycles
+    setLDXFlags();
+}
+
+void Cpu6502::LDX_ABS()                //loading X register with absolute addressing mode
+{
+    X = mmu->readByte(mmu->readWord(PC+1));
+    PC += 3;
+    cycles += 4;
+    setLDXFlags();
+}
+
+void Cpu6502::LDX_ABSY()                //loading X register with absolute + Y addressing mode
+{
+    X = mmu->readByte(mmu->readWord(PC+1) + Y);              //reading the next 2 bytes in little endian mode then adding Y to it, then load it into X
+    cycles += ((PC+3 & 0xFF00) > (PC & 0xFF00)) ? 5 : 4;       //if page is crossed (ex: PC=0x00FF and after the instruction PC=0x0101), cycles is incremented by 5, 4 otherwise
+    PC += 3;                                                 //PC is incremented by 3 for next instruction
+    setLDXFlags();
+}
+                                                                  
+/******LDY INSTRUCTIONS*****/
+
+void Cpu6502::setLDYFlags()              //set specific Flag status accordingly to value
+{
+    S[C] = 0;           // SetFlag(false, 'C');
+    S[I] = 0;           // SetFlag(false, 'I');
+    S[D] = 0;           // SetFlag(false, 'D');
+    S[B] = 0;           // SetFlag(false, 'B');
+    S[V] = 0;           // SetFlag(false, 'V');
+    S[Z] = Y == 0;      // Set if Y = 0
+    S[C] = Y & (1<<7);  // Set if bit 7 of X is set
+}
+
+void Cpu6502::LDY_IMM()                  //loading Y register with immediate addressing mode
+{
+    Y = mmu->readByte(PC+1);            //Y is loaded with RAM[PC+1]
+    PC += 2;                            //PC is incremented by 2 for next instruction
+    cycles += 2;                        //instruction take 2 cycles
+    setLDYFlags();
+}
+
+void Cpu6502::LDY_ZP()                                   //loading Y register with zero page addressing mode
+{
+    Y = mmu->readByte(mmu->readByte(PC+1));              //Y is loaded with the next 8bit value in memory aka RAM[RAM[PC+1]]
+    PC += 2;                                             //PC is incremented by 2 for next instruction
+    cycles += 3;                                         //instruction take 3 cycles
+    setLDYFlags();
+}
+
+void Cpu6502::LDY_ZPX()                                  //loading Y register with zero page + X addressing mode
+{
+    Y = mmu->readByte(mmu->readByte(PC+1) + X);          //Y is loaded with the next 8bit value in memory + Y aka RAM[RAM[PC+1 + Y]]
+    PC += 2;                                             //PC is incremented by 2 for next instruction
+    cycles += 4;                                         //instruction take 4 cycles
+    setLDYFlags();
+}
+
+void Cpu6502::LDY_ABS()                //loading Y register with absolute addressing mode
+{
+    Y = mmu->readByte(mmu->readWord(PC+1));
+    PC += 3;
+    cycles += 4;
+    setLDYFlags();
+}
+
+void Cpu6502::LDY_ABSX()                //loading Y register with absolute + X addressing mode
+{
+    Y =mmu->readByte(mmu->readWord(PC+1) + Y);              //reading the next 2 bytes in little endian mode then adding Y to it, then load it into X
+    cycles += ((PC+3 & 0xFF00) > (PC & 0xFF00)) ? 5 : 4;       //if page is crossed (ex: PC=0x00FF and after the instruction PC=0x0101), cycles is incremented by 5, 4 otherwise
+    PC += 3;                                                 //PC is incremented by 3 for next instruction
+    setLDYFlags();
+}
+
+//STA Instructions
+void Cpu6502::STA_ZP()
+{
+    mmu->writeByte(A, mmu->readByte(PC+1));         //writing A value into RAM[RAM[PC+1]] at zero page
+    cycles += 3;
+    PC += 2;
+}
+
+void Cpu6502::STA_ZPX()
+{
+    mmu->writeByte(A, mmu->readByte(PC+1) + X);         //writing A value into RAM[RAM[PC+1] + X] at zero page 
+    cycles += 4;
+    PC += 2;
+}
+
+void Cpu6502::STA_ABS()
+{
+    mmu->writeByte(A, mmu->readWord(PC+1));         //writing A value into RAM[next 2 bytes in little endianess]
+    cycles += 4;
+    PC += 3;
+}
+
+void Cpu6502::STA_ABSX()
+{
+    mmu->writeByte(A, mmu->readWord(PC+1) + X);         //writing A value into RAM[next 2 bytes in little endianess + X]
+    cycles += 5;
+    PC += 3;
+}
+
+void Cpu6502::STA_ABSY()
+{
+    mmu->writeByte(A, mmu->readWord(PC+1) + Y);         //writing A value into RAM[next 2 bytes in little endianess + Y]
+    cycles += 5;
+    PC += 3;
+}
+
+void Cpu6502::STA_IX()
+{
+    mmu->writeByte(A, mmu->readWord(mmu->readByte(PC+1) + X));      //read next byte, add x to it. then write A at next 2 bytes staring from last addition
+    cycles += 6;
+    PC += 2;
+}
+
+void Cpu6502::STA_IY()
+{
+    mmu->writeByte(A, mmu->readWord(mmu->readByte(PC+1)) + Y);      //read next byte. then write A at next 2 bytes staring from last addition + Y
+    cycles += 6;
+    PC += 2;
+}
+
+
+//STX Instructions
+void Cpu6502::STX_ZP()
+{
+    mmu->writeByte(X, mmu->readByte(PC+1));         //writing X value into RAM[RAM[PC+1]] at zero page
+    cycles += 3;
+    PC += 2;
+}
+
+void Cpu6502::STX_ZPY()
+{
+    mmu->writeByte(X, mmu->readByte(PC+1) + Y);         //writing X value into RAM[RAM[PC+1] + Y] at zero page 
+    cycles += 4;
+    PC += 2;
+}
+
+void Cpu6502::STX_ABS()
+{
+    mmu->writeByte(X, mmu->readWord(PC+1));         //writing X value into RAM[next 2 bytes in little endianess]
+    cycles += 4;
+    PC += 3;
+}
+
+//STY Instructions
+void Cpu6502::STY_ZP()
+{
+    mmu->writeByte(Y, mmu->readByte(PC+1));         //writing Y value into RAM[RAM[PC+1]] at zero page
+    cycles += 3;
+    PC += 2;
+}
+
+void Cpu6502::STY_ZPX()
+{
+    mmu->writeByte(Y, mmu->readByte(PC+1) + X);         //writing X value into RAM[RAM[PC+1] + Y] at zero page 
+    cycles += 4;
+    PC += 2;
+}
+
+void Cpu6502::STY_ABS()
+{
+    mmu->writeByte(Y, mmu->readWord(PC+1));         //writing X value into RAM[next 2 bytes in little endianess]
+    cycles += 4;
+    PC += 3;
+}
+
+
+//JSR Instruction
+void Cpu6502::JSR()
+{
+    PushPCtoStack();            //push next instruction to stack
+    PC = mmu->readWord(PC+1);   //set the PC to next 2 bytes in little endianess
+    cycles += 6;
+}
+
+//RST Instruction
+void Cpu6502::RTS()                      //Return from subroutine
+{
+    PopPCfromStack();           //pop previous instruction to be executed from stack
+    cycles += 6;
+}
+
+//JMP Instruction
+/*
+    TODO: An original 6502 has does not correctly fetch the target address if the indirect vector falls on a page boundary 
+    (e.g. $xxFF where xx is any value from $00 to $FF). 
+    In this case fetches the LSB from $xxFF as expected but takes the MSB from $xx00. 
+    This is fixed in some later chips like the 65SC02 so for compatibility always ensure the indirect vector is not at the end of the page.
+    */
+
+void Cpu6502::JMP_ABS()
+{
+   PC = mmu->readWord(PC+1);                //set PC to next 2 bytes in little endianess
+   cycles += 3;
+   PC += 3;
+}
+
+void Cpu6502::JMP_I()
+{
+    PC = mmu->readWord(mmu->readWord(PC+1));    //get next 2 bytes in litle endian, then get next 2 bytes from that and set PC to it
+    cycles += 5;
+    PC += 3;
+}
+
+
   
