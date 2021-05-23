@@ -6,7 +6,7 @@
 class Cpu6502
 {
 private:
-    enum Flags { N, V, B, UNUSED, D, I, Z, C };
+    enum Flags { N, V, UNUSED, B, D, I, Z, C };
 
     Byte A, X , Y;      // Registers
     Word PC;            // ProgramCounter
