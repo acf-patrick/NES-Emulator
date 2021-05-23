@@ -1,4 +1,8 @@
 #include "nes.h"
+#include <SDL2/SDL_ttf.h>
+
+SDL_Window*     Nes::window   = nullptr;
+SDL_Renderer*   Nes::renderer = nullptr;
 
 Nes::Nes()
 {
@@ -8,26 +12,37 @@ Nes::Nes()
 
 // GUI
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
-    SDL_CreateWindowAndRenderer(WIDTH, HEIGHT, SDL_WINDOW_SHOWN, &window, &renderer);
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+
+    int width(2*WIDTH);
+    SDL_CreateWindowAndRenderer(width, HEIGHT, SDL_WINDOW_SHOWN, &window, &renderer);
+    SDL_SetWindowTitle(window, "NES Emulator");
+    // SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+
+    TTF_Init();
 
     running = true;
-    debug   = true;
+    debugger = new Debugger(cpu);
 }
 
 Nes::~Nes()
 {
+    Text::destroyFont();
+
+    delete debugger;
     delete mmu;
     delete cpu;
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
+    TTF_Quit();
     SDL_Quit();
 }
 
 void Nes::run()
 {
+    static bool once = true;
     SDL_Event event;
+
     while (running)
     {
         while (SDL_PollEvent(&event))
@@ -40,22 +55,21 @@ void Nes::run()
                 keys[event.key.keysym.scancode] = false;
         }
 
-        cpu->step();
+        if (once)
+        {
+            once = false;
+            cpu->step();
+        }
 
-        SDL_RenderClear(renderer);
+        // SDL_RenderClear(renderer);
         drawGame();
-        if (debug)
-            drawDebugger();
+        if (debugger)
+            debugger->draw();
         SDL_RenderPresent(renderer);
     }
 }
 
 void Nes::drawGame()
-{
-
-}
-
-void Nes::drawDebugger()
 {
 
 }

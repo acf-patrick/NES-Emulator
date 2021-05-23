@@ -13,9 +13,9 @@ endif
 
 HEADER = SDL2/
 
-SRC = cpu6502.cpp mmu.cpp nes.cpp main.cpp
+SRC = cpu6502.cpp mmu.cpp nes.cpp main.cpp debugger.cpp text.cpp
 
-SDL = -lSDL2 -lSDL2-ttf
+SDL = -lSDL2 -lSDL2_ttf
 
 all : obj
 	@echo "... Link ..."

@@ -3,7 +3,7 @@
 #include "defs.h"
 #include "mmu.h"
 
-class Nes;
+class Debugger;
 
 class Cpu6502
 {
@@ -39,5 +39,5 @@ public:
     void LDA_IX();           //loading A register with (indirect + X) addressing mode
     void LDA_IY();           //loading A register with (indirect) + Y addressing mode
 
-friend class Nes;
+friend class Debugger;
 };
