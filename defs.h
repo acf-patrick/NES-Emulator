@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cstdint>
 #include <bitset>
+#include <cmath>
 
 // aliases
 using Word  = std::uint16_t;

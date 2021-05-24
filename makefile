@@ -13,7 +13,7 @@ endif
 
 HEADER = imgui-1.73/ SDL2/
 
-IMGUI  = backend/imgui_impl_sdl.cpp imgui-1.73/*.cpp
+IMGUI  = imgui-1.73/backend/imgui_impl_sdl.cpp imgui-1.73/*.cpp
 SRC = cpu6502.cpp mmu.cpp nes.cpp main.cpp
 
 SDL = -lSDL2
