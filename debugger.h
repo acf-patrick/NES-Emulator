@@ -7,6 +7,7 @@
 #include <SDL2/SDL_ttf.h>
 
 class Text;
+class Debugger;
 
 // Supposed to be only used for debugging
 class Box
@@ -41,11 +42,10 @@ class Box
 friend class Debugger;
 };
 
-class Debugger;
-
 // Supposed to be only used for debugging
 class Text
 {
+protected:
     static SDL_Rect screen;
     static TTF_Font* font;
     
@@ -53,7 +53,7 @@ class Text
 
     std::string text = "";
     SDL_Texture* texture = nullptr;
-    SDL_Color color = { 58, 140, 166, 255 };
+    SDL_Color color = { 37, 196, 246, 255 };
     SDL_Point position;
     SDL_Point size;                 // texture size
 
@@ -70,7 +70,7 @@ public:
     Text(const std::string&, const SDL_Point&);
     ~Text();
 
-    void draw();
+    virtual void draw();                // draw inside the viewport
     void draw(const SDL_Rect&); // draw inside what?
 
     void setColor(Uint8, Uint8, Uint8, Uint8 a = 255);
@@ -92,10 +92,25 @@ Text& operator<<(Text&, Word);
 // Append a string
 Text& operator<<(Text&, const std::string&);
 
+// Supposed to be only used for debugging
+class Button : private Text
+{
+    static std::map<std::string, SDL_Color> colors;
+    std::string state = "idle";     // idle - hover - pressed
+    SDL_Point padding = { 10, 5 };   // distance separating the text and the bounding box
+
+    Button(const std::string&);
+    void draw() override;
+    bool contains(const SDL_Point&);
+
+friend class Debugger;
+};
+
 class Debugger
 {
 private:
     std::map<std::string, Box*> div;    // divers block dans le debugger
+    std::map<std::string, Button*> buttons;
     Cpu6502& cpu;
 
     static SDL_Window* window;          // show the debugger on a separated window
@@ -111,6 +126,7 @@ public:
     void handle(SDL_Event&);
     void draw();
 
+friend class Button;
 friend class Text;
 friend class Box;
 };

@@ -60,12 +60,38 @@ Debugger::Debugger(Cpu6502* c) : cpu(*c)
         ss << " : ";
         prev = mem.push(key, ss.str(), { padding.x, prev->getDown()+interline });
     }
+
+// buttons
+    Button::colors = {
+        { "idle"    , { 69, 69, 69, 255 } },
+        { "hover"   , { 80, 80, 80, 255 } },
+        { "pressed" , { 45, 45, 45, 255 } }
+    };
+
+    auto& reg_v = div["register"]->viewport;
+    Button *b, *p;
+    int y;
+
+    b = buttons["step"] = new Button("step");
+    y = reg_v.y+reg_v.h - (b->size.y+2*b->padding.y+5);
+    b->position = { reg_v.x+5, y };
+    p = b;
+
+    b = buttons["continue"] = new Button("continue");
+    b->position = { p->position.x+p->size.x+2*p->padding.x+5, y };
+    p = b;
+
+    b = buttons["stop"] = new Button("stop");
+    b->position = { p->position.x+p->size.x+2*p->padding.x+5, y };
 }
 Debugger::~Debugger()
 {
     for (auto& pair : div)
         delete pair.second;
     div.clear();
+    for (auto& pair : buttons)
+        delete pair.second;
+    buttons.clear();
 
     Text::destroyFont();
 
@@ -116,19 +142,49 @@ void Debugger::update()
 
 void Debugger::handle(SDL_Event& event)
 {  
+    // work only if the focus is on the debugger
+    if (event.window.windowID != SDL_GetWindowID(window))
+        return;
+
     const int diff = 7;
 
-    // if the focus is on the debugger window
-    if (event.window.windowID == SDL_GetWindowID(window))
-        if (event.type == SDL_MOUSEWHEEL)
-            for (auto& pair : div)
+    for (auto& pair : div)
+    {
+        auto& box = *pair.second;
+        SDL_Point mouse;
+        SDL_GetMouseState(&mouse.x, &mouse.y);
+        // The mouse cursor is inside the box
+        if (SDL_PointInRect(&mouse, &box.viewport))
+        {
+            if (event.type == SDL_KEYDOWN)
             {
-                auto& box = *pair.second;
-                SDL_Point mouse;
-                SDL_GetMouseState(&mouse.x, &mouse.y);
-                if (SDL_PointInRect(&mouse, &box.viewport))
-                    box.slide((event.wheel.y>0) ? -diff:diff);
+                if (event.key.keysym.scancode == SDL_SCANCODE_UP)
+                    box.slide(diff);
+                else if (event.key.keysym.scancode == SDL_SCANCODE_DOWN)
+                    box.slide(-diff);
             }
+            if (event.type == SDL_MOUSEWHEEL)
+                box.slide((event.wheel.y>0) ? -diff:diff);
+        }
+    }
+    
+    for (auto& pair : buttons)
+    {
+        auto& button = *pair.second;
+        button.state = "idle";
+        if (button.contains({ event.motion.x, event.motion.y }))
+        {
+            if (event.type == SDL_MOUSEMOTION)
+                button.state = "hover";
+            if (event.type == SDL_MOUSEBUTTONDOWN)
+                button.state = "pressed";
+            if (event.type == SDL_MOUSEBUTTONUP)
+            {
+                // do stuff
+                std::cout << pair.first << std::endl;
+            }
+        }
+    }
 }
 
 void Debugger::draw()
@@ -142,6 +198,8 @@ void Debugger::draw()
 
 // time to show what we got
     for (auto& pair : div)
+        pair.second->draw();
+    for (auto& pair : buttons)
         pair.second->draw();
 
     SDL_RenderPresent(renderer);
