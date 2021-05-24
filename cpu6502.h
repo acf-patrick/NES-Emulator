@@ -3,6 +3,8 @@
 #include "defs.h"
 #include "mmu.h"
 
+class Debugger;
+
 class Cpu6502
 {
 private:
@@ -224,4 +226,5 @@ public:
     //INC Instructions
 
     /***********************************************************************/
+friend class Debugger;
 };
