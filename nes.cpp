@@ -13,8 +13,7 @@ Nes::Nes()
 // GUI
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 
-    int width(2*WIDTH);
-    SDL_CreateWindowAndRenderer(width, HEIGHT, SDL_WINDOW_SHOWN, &window, &renderer);
+    SDL_CreateWindowAndRenderer(WIDTH, HEIGHT, SDL_WINDOW_SHOWN, &window, &renderer);
     SDL_SetWindowTitle(window, "NES Emulator");
     // SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
@@ -26,8 +25,6 @@ Nes::Nes()
 
 Nes::~Nes()
 {
-    Text::destroyFont();
-
     delete debugger;
     delete mmu;
     delete cpu;
@@ -47,12 +44,26 @@ void Nes::run()
     {
         while (SDL_PollEvent(&event))
         {
-            if (event.type == SDL_QUIT)
-                running = false;
+            if (event.type == SDL_WINDOWEVENT)
+            {
+                // quit only when X button of the main window i.e the Nes-Emulator window
+                // has been hit
+                if (event.window.event == SDL_WINDOWEVENT_CLOSE)
+                    if (SDL_GetWindowID(window) == event.window.windowID)
+                        running = false;
+                    else // must be the debugger window
+                    {
+                        delete debugger;
+                        debugger = nullptr;
+                    }
+            }
             else if (event.type == SDL_KEYDOWN)
                 keys[event.key.keysym.scancode] = true;
             else if (event.type == SDL_KEYUP)
                 keys[event.key.keysym.scancode] = false;
+                
+            // should we drag some of the sliders?
+            debugger->handle(event);
         }
 
         if (once)
