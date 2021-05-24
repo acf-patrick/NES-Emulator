@@ -5,8 +5,7 @@
 #include <iostream>
 
 TTF_Font* Text::font = nullptr;
-SDL_Color Text::background = { 15, 16, 17, 255 };
-std::vector<Text*> Text::instances;
+SDL_Rect  Text::screen;
 
 void Text::destroyFont()
 {
@@ -14,27 +13,28 @@ void Text::destroyFont()
     font = nullptr;
 }
 
-SDL_Color Text::getBackground()
-{ return background; }
-void Text::setBackground(Uint8 r, Uint8 g, Uint8 b, Uint8 a)
-{
-    background.r = r;
-    background.g = g;
-    background.b = b;
-    background.a = a;
-
-    // inform all of the texts that the bg color has changed
-    for (auto& text : instances)
-        text->update();
-}
-
 Text::Text(const std::string& t, const SDL_Point& p, SDL_Rect& v) : 
     viewport(v), position(p)
 {
     if (!font)
+    {
+        screen.x = screen.y = 0;
+        SDL_GetWindowSize(Debugger::window, &screen.w, &screen.h);
         font = TTF_OpenFont("Ubuntu-M.ttf", 15);
+    }
     setText(t);
-    instances.push_back(this);
+}
+
+Text::Text(const std::string& t, const SDL_Point& p) :
+    viewport(screen), position(p)
+{
+    if (!font)
+    {
+        screen.x = screen.y = 0;
+        SDL_GetWindowSize(Debugger::window, &screen.w, &screen.h);
+        font = TTF_OpenFont("Ubuntu-M.ttf", 15);
+    }
+    setText(t);
 }
 
 Text::~Text()
@@ -47,15 +47,18 @@ void Text::update()
     for (auto& c : text)
         if ((int)c >= (int)'a' and (int)c <= (int)'z')
             c -= 32;
-    SDL_Surface* tmp = TTF_RenderText_Shaded(font, text.c_str(), color, background);
+    SDL_Surface* tmp = TTF_RenderText_Blended(font, text.c_str(), color);
     if (!tmp)
     {
         std::cerr << "Unable to write text : " << text << std::endl;
         exit(1);
     }
+    // udpate texeture
     SDL_DestroyTexture(texture);
     texture = SDL_CreateTextureFromSurface(Debugger::renderer, tmp);
+    // update size
     SDL_QueryTexture(texture, NULL, NULL, &size.x, &size.y);
+
     SDL_FreeSurface(tmp);
 }
 

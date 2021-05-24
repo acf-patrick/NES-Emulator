@@ -9,19 +9,26 @@
 class Text;
 
 // Supposed to be only used for debugging
-class SliderBox
+class Box
 {
     SDL_Rect drag;                                  // attach to the texts, it will help us to drag them together (up or down)
     SDL_Rect viewport;                              // the box
-    std::map<std::string, Text*> texts;   // the texts inside
+    std::map<std::string, Text*> texts;             // the texts inside
+
+    SDL_Color background = { 15, 16, 17, 255 },     // Drak Grey
+                boxColor = { 255, 255, 255, 255 };  // Color of the bounding box
     
     // boundaries of the text list
     Text *first = nullptr;
     Text *last;
 
-    SliderBox(const SDL_Rect&);                     // the box as parameter
-    ~SliderBox();
+    // put on top of the box
+    Text*  label = nullptr;
 
+    Box(const SDL_Rect&);                            // the box as parameter
+    ~Box();
+
+    void setLabel(const std::string&);
     void slide(int);
     void draw();
 
@@ -39,15 +46,14 @@ class Debugger;
 // Supposed to be only used for debugging
 class Text
 {
-    static std::vector<Text*> instances;
+    static SDL_Rect screen;
     static TTF_Font* font;
-    static SDL_Color background;    // color of the debugger's background
     
     SDL_Rect& viewport;              // box containing the text
 
     std::string text = "";
     SDL_Texture* texture = nullptr;
-    SDL_Color color = { 255, 255, 255, 255 };
+    SDL_Color color = { 58, 140, 166, 255 };
     SDL_Point position;
     SDL_Point size;                 // texture size
 
@@ -61,6 +67,7 @@ class Text
 
 public:    
     Text(const std::string&, const SDL_Point&, SDL_Rect&);
+    Text(const std::string&, const SDL_Point&);
     ~Text();
 
     void draw();
@@ -76,7 +83,7 @@ public:
     int getDown();
     int getRight();
 
-friend class SliderBox;
+friend class Box;
 friend class Debugger;
 };
 
@@ -88,12 +95,10 @@ Text& operator<<(Text&, const std::string&);
 class Debugger
 {
 private:
-    std::vector<SDL_Rect> viewport;
-    std::map<std::string, Text*> texts;
-    std::map<std::string, SliderBox*> sliders;
+    std::map<std::string, Box*> div;    // divers block dans le debugger
     Cpu6502& cpu;
 
-    static SDL_Window* window; // show the debugger on a separated window
+    static SDL_Window* window;          // show the debugger on a separated window
     static SDL_Renderer* renderer;
 
     void update();
@@ -107,5 +112,5 @@ public:
     void draw();
 
 friend class Text;
-friend class SliderBox;
+friend class Box;
 };

@@ -1,11 +1,11 @@
 #include "debugger.h"
 
-Text*& SliderBox::operator[](const std::string& tag)
+Text*& Box::operator[](const std::string& tag)
 {
     return texts[tag];
 }
 
-Text* SliderBox::push(const std::string& tag, const std::string& content, const SDL_Point& position)
+Text* Box::push(const std::string& tag, const std::string& content, const SDL_Point& position)
 {
     last = texts[tag] = new Text(content, position, drag);
     if (!first)
@@ -13,20 +13,21 @@ Text* SliderBox::push(const std::string& tag, const std::string& content, const 
     return texts[tag];
 }
 
-SliderBox::SliderBox(const SDL_Rect& rect)
+Box::Box(const SDL_Rect& rect)
 {
     drag = rect;
     viewport = rect;
 }
 
-SliderBox::~SliderBox()
+Box::~Box()
 {
+    delete label;
     for (auto& pair : texts)
         delete pair.second;
     texts.clear();
 }
 
-void SliderBox::slide(int diff)
+void Box::slide(int diff)
 {
     if (diff < 0)
     {
@@ -40,9 +41,15 @@ void SliderBox::slide(int diff)
     }
 }
 
-void SliderBox::draw()
+void Box::draw()
 {
     auto renderer = Debugger::renderer;
+
+    SDL_SetRenderDrawColor(renderer, background.r, background.g, background.b, background.a);
+    SDL_RenderFillRect(renderer, &viewport);
+
+    if (label)
+        label->draw();
 
     // draw only if inside the viewport
     for (auto& pair : texts)
@@ -54,6 +61,18 @@ void SliderBox::draw()
             text->draw(viewport);
     }
 
-    SDL_SetRenderDrawColor(renderer, 255, 0, 255, 255);
+    SDL_SetRenderDrawColor(renderer, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
     SDL_RenderDrawRect(renderer, &viewport);
+}
+
+void Box::setLabel(const std::string& l)
+{
+    label = new Text(l, {0, viewport.y});
+    // center it on top of the box
+    label->position.x = viewport.x + 0.5*(viewport.w - label->size.x);
+    
+    // push the box down
+    viewport.y += label->size.y;
+    drag.y += label->size.y;
+
 }
