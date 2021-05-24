@@ -167,8 +167,61 @@ public:
     void ORA_IX();              //ORA A with next byte in (indirect + X) addressing mode
     void ORA_IY();              //ORA A with next byte in (indirect) + Y addressing mode
 
+    //BIT Instructions
+    void BIT_ZP();              //Tests if bit 7 and 6 form memory is set/unset in zero page addresing mode
+    void BIT_ABS();             //Tests if bit 7 and 6 form memory is set/unset in absolue addresing mode
 
 
-    /*****************************************************************/
 
+    /*********************************************************************/
+
+    /*************************ARITHMETIC Operations**********************/
+
+    //ADC Instructions
+    void ADC_IMM();             //Add A with carry and next byte in immediate mode
+    void ADC_ZP();              //Add A with carry and next byte in zero page mode
+    void ADC_ZPX();             //Add A with carry and next byte in zero page + X mode
+    void ADC_ABS();             //Add A with carry and next byte in absolute mode
+    void ADC_ABSX();            //Add A with carry and next byte in absolute + X mode
+    void ADC_ABSY();            //Add A with carry and next byte in absolute + Y mode
+    void ADC_IX();              //Add A with carry and next byte in (indirect + X) mode
+    void ADC_IY();              //Add A with carry and next byte in (indirect) + Y mode
+
+    //SBC Instructions
+    void SBC_IMM();             //substract  next byte to A and carry in immediate mode
+    void SBC_ZP();              //substract  next byte to A and carry in zero page mode
+    void SBC_ZPX();             //substract  next byte to A and carry in zero page + X mode
+    void SBC_ABS();             //substract  next byte to A and carry in absolute mode
+    void SBC_ABSX();            //substract  next byte to A and carry in absolute + X mode
+    void SBC_ABSY();            //substract  next byte to A and carry in absolute + Y mode
+    void SBC_IX();              //substract  next byte to A and carry in (indirect + X) mode
+    void SBC_IY();              //substract  next byte to A and carry in (indirect) + Y mode
+
+    //CMP Instructions
+    void CMP_IMM();             //Compare A with next 2 byte in immediate adressing mode
+    void CMP_ZP();              //Compare A with next 2 byte in zero page adressing mode
+    void CMP_ZPX();             //Compare A with next 2 byte in zero page + X adressing mode
+    void CMP_ABS();             //Compare A with next 2 byte in absolute adressing mode
+    void CMP_ABSX();            //Compare A with next 2 byte in absolute + X adressing mode
+    void CMP_ABSY();            //Compare A with next 2 byte in absolute + Y adressing mode
+    void CMP_IX();              //Compare A with next 2 byte in (indirect + X) adressing mode
+    void CMP_IY();              //Compare A with next 2 byte in (indriect) = Y adressing mode
+
+    //CPX Instructions
+    void CPX_IMM();             //Compare X with next 2 byte in immediate adressing mode
+    void CPX_ZP();              //Compare X with next 2 byte in zero page adressing mode
+    void CPX_ABS();             //Compare X with next 2 byte in absolute adressing mode
+
+    //CPY Instructions
+    void CPY_IMM();             //Compare Y with next 2 byte in immediate adressing mode
+    void CPY_ZP();              //Compare Y with next 2 byte in zero page adressing mode
+    void CPY_ABS();             //Compare Y with next 2 byte in absolute adressing mode
+
+    /***********************************************************************/
+
+    /*******************INCREMENTS/DECREMENTS Operations*********************/
+
+    //INC Instructions
+
+    /***********************************************************************/
 };
