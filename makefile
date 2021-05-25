@@ -9,14 +9,15 @@ ifeq ($(OS), Windows_NT)
 	HEADER = "C:\Program Files\CodeBlocks\MinGW\include"
 	SDL = -lmingw32 -lSDL2main -lSDL2 -lSDL2_ttf
 else
+	CXX = g++-10
 	CLEAN = rm -f *.o
-	LIB = ./SDL2/lib/
-	HEADER = ./SDL2/include/
+	LIB = .
+	HEADER = /usr/include/SDL2/
 	SDL = -lSDL2 -lSDL2_ttf
 endif
 
 
-SRC = cpu6502.cpp mmu.cpp nes.cpp main.cpp debugger.cpp text.cpp box.cpp button.cpp
+SRC = cpu6502.cpp opcode.cpp mmu.cpp nes.cpp main.cpp debugger.cpp text.cpp box.cpp button.cpp
 
 
 all : obj
@@ -26,7 +27,7 @@ all : obj
 
 obj : $(SRC)
 	@echo "... Compile ..."
-	$(CXX) $(CFLAGS) -I$(HEADER) -c $?
+	$(CXX) $(CFLAGS) -I$(HEADER) -c $^
 
 clean : 
 	@$(CLEAN)
