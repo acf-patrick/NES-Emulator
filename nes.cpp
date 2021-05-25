@@ -19,7 +19,7 @@ Nes::Nes()
     TTF_Init();
 
     running = true;
-    debugger = new Debugger(cpu);
+    debugger = new Debugger(cpu, step); // commenting this line will remove the debugger
 }
 
 Nes::~Nes()
@@ -36,7 +36,6 @@ Nes::~Nes()
 
 void Nes::run()
 {
-    static bool once = true;
     SDL_Event event;
 
     while (running)
@@ -61,13 +60,15 @@ void Nes::run()
             else if (event.type == SDL_KEYUP)
                 keys[event.key.keysym.scancode] = false;
                 
-            // should we drag some of the sliders?
-            debugger->handle(event);
+            // check for event
+            if (debugger)
+                debugger->handle(event);
         }
 
-        if (once)
+        if (step)
         {
-            once = false;
+            if (step == 1)
+                step = 0;
             cpu->step();
         }
 

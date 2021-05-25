@@ -16,7 +16,7 @@ class Box
     SDL_Rect viewport;                              // the box
     std::map<std::string, Text*> texts;             // the texts inside
 
-    SDL_Color background = { 15, 16, 17, 255 },     // Drak Grey
+    SDL_Color background = { 15, 16, 17, 255 },     // Drak
                 boxColor = { 255, 255, 255, 255 };  // Color of the bounding box
     
     // boundaries of the text list
@@ -116,11 +116,13 @@ private:
     static SDL_Window* window;          // show the debugger on a separated window
     static SDL_Renderer* renderer;
 
+    int& step;
+
     void update();
 
 public:
 
-    Debugger(Cpu6502*);
+    Debugger(Cpu6502*, int&);
     ~Debugger();
 
     void handle(SDL_Event&);

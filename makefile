@@ -14,7 +14,7 @@ endif
 
 HEADER = ./SDL2/include/
 
-SRC = cpu6502.cpp mmu.cpp nes.cpp main.cpp debugger.cpp text.cpp box.cpp button.cpp
+SRC = cpu6502.cpp opcode.cpp mmu.cpp nes.cpp main.cpp debugger.cpp text.cpp box.cpp button.cpp
 
 SDL = -lSDL2 -lSDL2_ttf
 

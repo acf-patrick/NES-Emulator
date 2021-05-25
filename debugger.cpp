@@ -7,7 +7,7 @@
 SDL_Window* Debugger::window = nullptr;
 SDL_Renderer* Debugger::renderer = nullptr;
 
-Debugger::Debugger(Cpu6502* c) : cpu(*c)
+Debugger::Debugger(Cpu6502* c, int& s) : cpu(*c), step(s)
 {
     const int width = WIDTH, height = HEIGHT;
     window = SDL_CreateWindow("Debugger", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_MOUSE_FOCUS);
@@ -180,8 +180,12 @@ void Debugger::handle(SDL_Event& event)
                 button.state = "pressed";
             if (event.type == SDL_MOUSEBUTTONUP)
             {
-                // do stuff
-                std::cout << pair.first << std::endl;
+                if (pair.first == "step")
+                    step = 1;
+                else if (pair.first == "stop")
+                    step = 0;
+                else
+                    step = -1;                
             }
         }
     }
