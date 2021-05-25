@@ -185,6 +185,117 @@ void Cpu6502::step()
         case 0xC0:   CPY_IMM();   break;
         case 0xC4:   CPY_ZP();    break;
         case 0xCC:   CPY_ABS();   break;
+        
+        /*******************INCREMENTS/DECREMENTS Operations*********************/
+        //INC Instructions
+        case 0xE6:  INC_ZP();   break;
+        case 0xF6:  INC_ZPX();  break;
+        case 0xEE:  INC_ABS();  break;
+        case 0xFE:  INC_ABSX(); break;
+
+        //INX Instruction
+        case 0xE8: INX(); break;
+
+        //INY Instruction
+        case 0xC8: INY(); break;
+
+        //DEC Instructions
+        case 0xC6:  DEC_ZP();   break;
+        case 0xD6:  DEC_ZPX();  break;
+        case 0xCE:  DEC_ABS();  break;
+        case 0xDE:  DEC_ABSX(); break;
+
+        //DEX Instruction
+        case 0xCA: DEX(); break;
+
+        //DEX Instruction
+        case 0x88: DEY(); break;
+
+        /***************************SHIFTS Operations***************************/
+        //ASL Instructions
+        case 0x0A:  ASL();      break;
+        case 0x06:  ASL_ZP();   break;
+        case 0x16:  ASL_ZPX();  break;
+        case 0x0E:  ASL_ABS();  break;
+        case 0x1E:  ASL_ABSX(); break;
+
+        //LSR Instructions
+        case 0x4A:  LSR();      break;
+        case 0x46:  LSR_ZP();   break;
+        case 0x56:  LSR_ZPX();  break;
+        case 0x4E:  LSR_ABS();  break;
+        case 0x5E:  LSR_ABSX(); break;
+
+        //ROL Instructions
+        case 0x2A:  ROL();      break;
+        case 0x26:  ROL_ZP();   break;
+        case 0x36:  ROL_ZPX();  break;
+        case 0x2E:  ROL_ABS();  break;
+        case 0x3E:  ROL_ABSX(); break;
+
+        //ROR Instructions
+        case 0x6A:  ROR();      break;
+        case 0x66:  ROR_ZP();   break;
+        case 0x76:  ROR_ZPX();  break;
+        case 0x6E:  ROR_ABS();  break;
+        case 0x7E:  ROR_ABSX(); break;
+
+        /***********************SYSTEM FUNCTIONS Operations**********************/
+        //BRK Instruction
+        case 0x00:  BRK();  break;
+
+        //NOP Instruction
+        case 0xEA:  NOP();  break;
+
+        //RTI Instruction
+        case 0x40:  RTI();  break;
+
+        /**************************BRANCHES Operations*************************/
+        //BCC Instruction
+        case 0x90:  BCC();  break;
+
+        //BCS Instruction
+        case 0xB0:  BCS();  break;
+
+        //BEQ Instruction
+        case 0xF0:  BEQ();  break;
+
+        //BNE Instruction
+        case 0xD0:  BNE();  break;
+
+        //BMI Instruction
+        case 0x30:  BMI();  break;
+
+        //BPL Instruction
+        case 0x10:  BPL();  break;
+
+        //BVC Instruction
+        case 0x50:  BVC();  break;
+
+        //BVS Instruction
+        case 0x70:  BVS();  break;
+
+        /************************STATUS FLAGS Operations************************/
+        //CLC Instruction
+        case 0x18:  CLC();  break;
+
+        //CLD Instruction
+        case 0xD8:  CLD();  break;
+
+        //CLI Instruction
+        case 0x58:  CLI();  break;
+
+        //CLV Instruction
+        case 0xB8:  CLV();  break;
+
+        //SEC Instruction
+        case 0x38:  SEC();  break;
+
+        //SED Instruction
+        case 0xF8:  SED();  break;
+
+        //SEI Instruction
+        case 0x78:  SEI();  break;
 
         default:
             std::cout << "Unknown Opcode = 0x" << std::hex << (int)currentOpcode << std::endl;
@@ -229,6 +340,12 @@ void Cpu6502::PushPCtoStack()
     SP--;                                                   //decrementing SP because Stack grows downward
 }
 
+void Cpu6502::PushStoSTack()
+{
+    mmu->writeByte(StoByte(), 0x0100 | SP);
+    SP --;       
+}
+
 void Cpu6502::PopPCfromStack()
 {
     Word value = (mmu->readByte(0x0100 | (SP+1)) << 8) | mmu->readByte(0x0100 | SP+2);      //getting 2 bytes from first page at SP in little endianess
@@ -236,6 +353,14 @@ void Cpu6502::PopPCfromStack()
     mmu->writeByte(0, 0x0100 | (SP+1));
     SP += 2;                                    //incrementing SP by 2 because we're poping (Stack grows downard)
     PC = value;                                 //setting PC to previous instruction to be executed before jumping 
+}
+
+void Cpu6502::PopSFromStack()
+{
+    SP ++;
+    Byte value = mmu->readByte(0x0100 | SP);
+    ByteToS(value);
+    mmu->writeByte(0, 0x0100 | SP);
 }
 
 
@@ -1267,4 +1392,638 @@ void Cpu6502::CPY_ABS()
     S[N] = tmp & 0x80;
     cycles += 4;
     PC += 3;
+}
+
+//INC Instructions
+void Cpu6502::INC_ZP()
+{
+    Byte index = mmu->readByte(PC+1);
+    Byte value = mmu->readByte(index);
+    mmu->writeByte(value + 1, index);
+    S[Z] = (value + 1) == 0;
+    S[N] = (value + 1) & (1 << 7);
+    cycles += 5;
+    PC += 2;
+}
+
+void Cpu6502::INC_ZPX()
+{
+    Byte index = mmu->readByte(PC+1) + X;
+    Byte value = mmu->readByte(index);
+    mmu->writeByte(value + 1, index);
+    S[Z] = (value + 1) == 0;
+    S[N] = (value + 1) & (1 << 7);
+    cycles += 6;
+    PC += 2;
+}
+
+void Cpu6502::INC_ABS()
+{
+    Word index = mmu->readWord(PC+1);
+    Byte value = mmu->readByte(index);
+    mmu->writeByte(value + 1, index);
+    S[Z] = (value + 1) == 0;
+    S[N] = (value + 1) & (1 << 7);
+    cycles += 6;
+    PC += 3;
+}
+
+void Cpu6502::INC_ABSX()
+{
+    Word index = mmu->readWord(PC+1) + X;
+    Byte value = mmu->readByte(index);
+    mmu->writeByte(value + 1, index);
+    S[Z] = (value + 1) == 0;
+    S[N] = (value + 1) & (1 << 7);
+    cycles += 7;
+    PC += 3;
+}
+
+//INX Instruction
+void Cpu6502::INX()
+{
+    X ++;
+    S[Z] = X == 0;
+    S[N] = X & (1 << 7);
+    cycles += 2;
+    PC ++;
+}
+
+//INY Instruction
+void Cpu6502::INY()
+{
+    Y ++;
+    S[Z] = Y == 0;
+    S[N] = Y & (1 << 7);
+    cycles += 2;
+    PC ++;
+}
+
+//DEC Instructions
+void Cpu6502::DEC_ZP()
+{
+    Byte index = mmu->readByte(PC+1);
+    Byte value = mmu->readByte(index);
+    mmu->writeByte(value - 1, index);
+    S[Z] = (value - 1) == 0;
+    S[N] = (value - 1) & (1 << 7);
+    cycles += 5;
+    PC += 2;
+}
+
+void Cpu6502::DEC_ZPX()
+{
+    Byte index = mmu->readByte(PC+1) + X;
+    Byte value = mmu->readByte(index);
+    mmu->writeByte(value - 1, index);
+    S[Z] = (value - 1) == 0;
+    S[N] = (value - 1) & (1 << 7);
+    cycles += 6;
+    PC += 2;
+}
+
+void Cpu6502::DEC_ABS()
+{
+    Word index = mmu->readWord(PC+1);
+    Byte value = mmu->readByte(index);
+    mmu->writeByte(value - 1, index);
+    S[Z] = (value - 1) == 0;
+    S[N] = (value - 1) & (1 << 7);
+    cycles += 6;
+    PC += 3;
+}
+
+void Cpu6502::DEC_ABSX()
+{
+    Word index = mmu->readWord(PC+1) + X;
+    Byte value = mmu->readByte(index);
+    mmu->writeByte(value - 1, index);
+    S[Z] = (value - 1) == 0;
+    S[N] = (value - 1) & (1 << 7);
+    cycles += 7;
+    PC += 3;
+}
+
+//DEX Instruction
+void Cpu6502::DEX()
+{
+    X --;
+    S[Z] = X == 0;
+    S[N] = X & (1 << 7);
+    cycles += 2;
+    PC ++;
+}
+
+//DEY Instruction
+void Cpu6502::DEY()
+{
+    Y --;
+    S[Z] = Y == 0;
+    S[N] = Y & (1 << 7);
+    cycles += 2;
+    PC ++;
+}
+
+//ASL Instructions
+void Cpu6502::ASL()
+{
+    S[C] = A & (1 << 7);
+    std::bitset<8> tmp; 
+    for (int i=7; i>=0; i--)      
+        tmp[i] = A & (1 << (7-i));
+    for (int i=7; i>0; i--)
+        tmp[i] = tmp[i-1];
+    tmp[0] = 0;
+    A = (Byte)(tmp.to_ulong());
+    S[Z] = A == 0;
+    S[N] = A & (1 << 7);
+    cycles += 2;
+    PC ++;
+}
+
+void Cpu6502::ASL_ZP()
+{
+    Byte value = mmu->readByte(mmu->readByte(PC+1));
+    S[C] = value & (1 << 7);
+    std::bitset<8> tmp; 
+    for (int i=7; i>=0; i--)      
+        tmp[i] = value & (1 << (7-i));
+    for (int i=7; i>0; i--)
+        tmp[i] = tmp[i-1];
+    tmp[0] = 0;
+    value = (Byte)(tmp.to_ulong());
+    S[Z] = value == 0;
+    S[N] = value & (1 << 7);
+    cycles += 5;
+    PC += 2;
+}
+
+void Cpu6502::ASL_ZPX()
+{
+    Byte value = mmu->readByte(mmu->readByte(PC+1) + X);
+    S[C] = value & (1 << 7);
+    std::bitset<8> tmp; 
+    for (int i=7; i>=0; i--)      
+        tmp[i] = value & (1 << (7-i));
+    for (int i=7; i>0; i--)
+        tmp[i] = tmp[i-1];
+    tmp[0] = 0;
+    value = (Byte)(tmp.to_ulong());
+    S[Z] = value == 0;
+    S[N] = value & (1 << 7);
+    cycles += 6;
+    PC += 2;
+}
+
+void Cpu6502::ASL_ABS()
+{
+    Byte value = mmu->readByte(mmu->readWord(PC+1));
+    S[C] = value & (1 << 7);
+    std::bitset<8> tmp; 
+    for (int i=7; i>=0; i--)      
+        tmp[i] = value & (1 << (7-i));
+    for (int i=7; i>0; i--)
+        tmp[i] = tmp[i-1];
+    tmp[0] = 0;
+    value = (Byte)(tmp.to_ulong());
+    S[Z] = value == 0;
+    S[N] = value & (1 << 7);
+    cycles += 6;
+    PC += 3;
+}
+
+void Cpu6502::ASL_ABSX()
+{
+    Byte value = mmu->readByte(mmu->readWord(PC+1) + X);
+    S[C] = value & (1 << 7);
+    std::bitset<8> tmp; 
+    for (int i=7; i>=0; i--)      
+        tmp[i] = value & (1 << (7-i));
+    for (int i=7; i>0; i--)
+        tmp[i] = tmp[i-1];
+    tmp[0] = 0;
+    value = (Byte)(tmp.to_ulong());
+    S[Z] = value == 0;
+    S[N] = value & (1 << 7);
+    cycles += 7;
+    PC += 3;
+}
+
+//LSR Instructions
+void Cpu6502::LSR()
+{
+    S[C] = A & 1;
+    std::bitset<8> tmp; 
+    for (int i=7; i>=0; i--)      
+        tmp[i] = A & (1 << (7-i));
+    for (int i=0; i<7; i++)
+        tmp[i] = tmp[i+1];
+    tmp[7] = 0;
+    A = (Byte)(tmp.to_ulong());
+    S[Z] = A == 0;
+    S[N] = A & (1 << 7);
+    cycles += 2;
+    PC ++;
+}
+
+void Cpu6502::LSR_ZP()
+{
+    Byte value = mmu->readByte(mmu->readByte(PC+1));
+    S[C] = value & 1;
+    std::bitset<8> tmp; 
+    for (int i=7; i>=0; i--)      
+        tmp[i] = value & (1 << (7-i));
+    for (int i=0; i<7; i++)
+        tmp[i] = tmp[i+1];
+    tmp[7] = 0;
+    value = (Byte)(tmp.to_ulong());
+    S[Z] = value == 0;
+    S[N] = value & (1 << 7);
+    cycles += 5;
+    PC += 2;
+}
+
+void Cpu6502::LSR_ZPX()
+{
+    Byte value = mmu->readByte(mmu->readByte(PC+1) + X);
+    S[C] = value & 1;
+    std::bitset<8> tmp; 
+    for (int i=7; i>=0; i--)      
+        tmp[i] = value & (1 << (7-i));
+    for (int i=0; i<7; i++)
+        tmp[i] = tmp[i+1];
+    tmp[7] = 0;
+    value = (Byte)(tmp.to_ulong());
+    S[Z] = value == 0;
+    S[N] = value & (1 << 7);
+    cycles += 6;
+    PC += 2;
+}
+
+void Cpu6502::LSR_ABS()
+{
+    Byte value = mmu->readByte(mmu->readWord(PC+1));
+    S[C] = value & 1;
+    std::bitset<8> tmp; 
+    for (int i=7; i>=0; i--)      
+        tmp[i] = value & (1 << (7-i));
+    for (int i=0; i<7; i++)
+        tmp[i] = tmp[i+1];
+    tmp[7] = 0;
+    value = (Byte)(tmp.to_ulong());
+    S[Z] = value == 0;
+    S[N] = value & (1 << 7);
+    cycles += 6;
+    PC += 3;
+}
+
+void Cpu6502::LSR_ABSX()
+{
+    Byte value = mmu->readByte(mmu->readWord(PC+1) + X);
+    S[C] = value & 1;
+    std::bitset<8> tmp; 
+    for (int i=7; i>=0; i--)      
+        tmp[i] = value & (1 << (7-i));
+    for (int i=0; i<7; i++)
+        tmp[i] = tmp[i+1];
+    tmp[7] = 0;
+    value = (Byte)(tmp.to_ulong());
+    S[Z] = value == 0;
+    S[N] = value & (1 << 7);
+    cycles += 7;
+    PC += 3;
+}
+
+//ROL Instructions
+void Cpu6502::ROL()
+{
+    int oldBit7 = A & (1 << 7);
+    std::bitset<8> tmp; 
+    for (int i=7; i>=0; i--)      
+        tmp[i] = A & (1 << (7-i));
+    for (int i=7; i>0; i--)
+        tmp[i] = tmp[i-1];
+    tmp[0] = S[C];
+    S[C] = oldBit7;
+    A = (Byte)(tmp.to_ulong());
+    S[Z] = A == 0;
+    S[N] = A & (1 << 7);
+    cycles += 2;
+    PC ++;
+}
+
+void Cpu6502::ROL_ZP()
+{
+    Byte value = mmu->readByte(mmu->readByte(PC+1));
+    int oldBit7 = value & (1 << 7);
+    std::bitset<8> tmp; 
+    for (int i=7; i>=0; i--)      
+        tmp[i] = value & (1 << (7-i));
+    for (int i=7; i>0; i--)
+        tmp[i] = tmp[i-1];
+    tmp[0] = S[C];
+    S[C] = oldBit7;
+    value = (Byte)(tmp.to_ulong());
+    S[Z] = value == 0;
+    S[N] = value & (1 << 7);
+    cycles += 5;
+    PC += 2;
+}
+
+void Cpu6502::ROL_ZPX()
+{
+    Byte value = mmu->readByte(mmu->readByte(PC+1) + X);
+    int oldBit7 = value & (1 << 7);
+    std::bitset<8> tmp; 
+    for (int i=7; i>=0; i--)      
+        tmp[i] = value & (1 << (7-i));
+    for (int i=7; i>0; i--)
+        tmp[i] = tmp[i-1];
+    tmp[0] = S[C];
+    S[C] = oldBit7;
+    value = (Byte)(tmp.to_ulong());
+    S[Z] = value == 0;
+    S[N] = value & (1 << 7);
+    cycles += 6;
+    PC += 2;
+}
+
+void Cpu6502::ROL_ABS()
+{
+    Byte value = mmu->readByte(mmu->readWord(PC+1));
+    int oldBit7 = value & (1 << 7);
+    std::bitset<8> tmp; 
+    for (int i=7; i>=0; i--)      
+        tmp[i] = value & (1 << (7-i));
+    for (int i=7; i>0; i--)
+        tmp[i] = tmp[i-1];
+    tmp[0] = S[C];
+    S[C] = oldBit7;
+    value = (Byte)(tmp.to_ulong());
+    S[Z] = value == 0;
+    S[N] = value & (1 << 7);
+    cycles += 6;
+    PC += 3;
+}
+
+void Cpu6502::ROL_ABSX()
+{
+    Byte value = mmu->readByte(mmu->readWord(PC+1) + X);
+    int oldBit7 = value & (1 << 7);
+    std::bitset<8> tmp; 
+    for (int i=7; i>=0; i--)      
+        tmp[i] = value & (1 << (7-i));
+    for (int i=7; i>0; i--)
+        tmp[i] = tmp[i-1];
+    tmp[0] = S[C];
+    S[C] = oldBit7;
+    value = (Byte)(tmp.to_ulong());
+    S[Z] = value == 0;
+    S[N] = value & (1 << 7);
+    cycles += 7;
+    PC += 3;
+}
+
+//ROR Instructions
+void Cpu6502::ROR()
+{
+    int oldBit0 = A & 1;
+    std::bitset<8> tmp; 
+    for (int i=7; i>=0; i--)      
+        tmp[i] = A & (1 << (7-i));
+    for (int i=0; i<7; i++)
+        tmp[i] = tmp[i+1];
+    tmp[7] = S[C];
+    S[C] = oldBit0;
+    A = (Byte)(tmp.to_ulong());
+    S[Z] = A == 0;
+    S[N] = A & (1 << 7);
+    cycles += 2;
+    PC ++;
+}
+
+void Cpu6502::ROR_ZP()
+{
+    Byte value = mmu->readByte(mmu->readByte(PC+1));
+    int oldBit0 = value & 1;
+    std::bitset<8> tmp; 
+    for (int i=7; i>=0; i--)      
+        tmp[i] = value & (1 << (7-i));
+    for (int i=0; i<7; i++)
+        tmp[i] = tmp[i+1];
+    tmp[7] = S[C];
+    S[C] = oldBit0;
+    value = (Byte)(tmp.to_ulong());
+    S[Z] = value == 0;
+    S[N] = value & (1 << 7);
+    cycles += 5;
+    PC += 2;
+}
+
+void Cpu6502::ROR_ZPX()
+{
+    Byte value = mmu->readByte(mmu->readByte(PC+1) + X);
+    int oldBit0 = value & 1;
+    std::bitset<8> tmp; 
+    for (int i=7; i>=0; i--)      
+        tmp[i] = value & (1 << (7-i));
+    for (int i=0; i<7; i++)
+        tmp[i] = tmp[i+1];
+    tmp[7] = S[C];
+    S[C] = oldBit0;
+    value = (Byte)(tmp.to_ulong());
+    S[Z] = value == 0;
+    S[N] = value & (1 << 7);
+    cycles += 6;
+    PC += 2;
+}
+
+void Cpu6502::ROR_ABS()
+{
+    Byte value = mmu->readByte(mmu->readWord(PC+1));
+    int oldBit0 = value & 1;
+    std::bitset<8> tmp; 
+    for (int i=7; i>=0; i--)      
+        tmp[i] = value & (1 << (7-i));
+    for (int i=0; i<7; i++)
+        tmp[i] = tmp[i+1];
+    tmp[7] = S[C];
+    S[C] = oldBit0;
+    value = (Byte)(tmp.to_ulong());
+    S[Z] = value == 0;
+    S[N] = value & (1 << 7);
+    cycles += 6;
+    PC += 3;
+}
+
+void Cpu6502::ROR_ABSX()
+{
+    Byte value = mmu->readByte(mmu->readWord(PC+1) + X);
+    int oldBit0 = value & 1;
+    std::bitset<8> tmp; 
+    for (int i=7; i>=0; i--)      
+        tmp[i] = value & (1 << (7-i));
+    for (int i=0; i<7; i++)
+        tmp[i] = tmp[i+1];
+    tmp[7] = S[C];
+    S[C] = oldBit0;
+    value = (Byte)(tmp.to_ulong());
+    S[Z] = value == 0;
+    S[N] = value & (1 << 7);
+    cycles += 7;
+    PC += 3;
+}
+
+//BRK Instruction
+void Cpu6502::BRK()
+{
+    PushPCtoStack();
+    PushStoSTack();
+    /*TODO: check here if interrupt vector is correct (0xFFFE/F)*/
+    PC = mmu->readWord(0xFFFE);
+    S[B] = 1;
+    cycles += 7;
+}
+
+//NOP Instruction
+void Cpu6502::NOP()
+{
+    cycles += 2;
+    PC++;
+}
+
+//RTI Instruction
+void Cpu6502::RTI()
+{
+    PopSFromStack();
+    PopPCfromStack();
+    cycles += 6;
+}
+
+//BCC Instruction
+void Cpu6502::BCC()
+{
+    Byte oldHiByteOfPC = PC & 0xFF00;
+    int nextByte = (int)mmu->readByte(PC+1);       //(int) because relative displacement after add
+    PC += S[C] ? 2 : nextByte;
+    cycles += 2 + (S[C] ? 0 : 1) + (((PC & 0xFF00) > oldHiByteOfPC) ? 2 : 0);
+}
+
+//BCS Instruction
+void Cpu6502::BCS()
+{
+    Byte oldHiByteOfPC = PC & 0xFF00;
+    int nextByte = (int)mmu->readByte(PC+1);       //(int) because relative displacement after add
+    PC += S[C] ? nextByte : 2;
+    cycles += 2 + (S[C] ? 1 : 0) + (((PC & 0xFF00) > oldHiByteOfPC) ? 2 : 0);
+}
+
+//BNE Instruction
+void Cpu6502::BNE()
+{
+    Byte oldHiByteOfPC = PC & 0xFF00;
+    int nextByte = (int)mmu->readByte(PC+1);       //(int) because relative displacement after add
+    PC += S[Z] ? 2 : nextByte;
+    cycles += 2 + (S[Z] ? 0 : 1) + (((PC & 0xFF00) > oldHiByteOfPC) ? 2 : 0);
+}
+
+//BEQ Instruction
+void Cpu6502::BEQ()
+{
+    Byte oldHiByteOfPC = PC & 0xFF00;
+    int nextByte = (int)mmu->readByte(PC+1);       //(int) because relative displacement after add
+    PC += S[Z] ? nextByte : 2;
+    cycles += 2 + (S[C] ? 1 : 0) + (((PC & 0xFF00) > oldHiByteOfPC) ? 2 : 0);
+}
+
+//BPL Instruction
+void Cpu6502::BPL()
+{
+    Byte oldHiByteOfPC = PC & 0xFF00;
+    int nextByte = (int)mmu->readByte(PC+1);       //(int) because relative displacement after add
+    PC += S[N] ? 2 : nextByte;
+    cycles += 2 + (S[N] ? 0 : 1) + (((PC & 0xFF00) > oldHiByteOfPC) ? 2 : 0);
+}
+
+//BMI Instruction
+void Cpu6502::BMI()
+{
+    Byte oldHiByteOfPC = PC & 0xFF00;
+    int nextByte = (int)mmu->readByte(PC+1);       //(int) because relative displacement after add
+    PC += S[N] ? nextByte : 2;
+    cycles += 2 + (S[N] ? 1 : 0) + (((PC & 0xFF00) > oldHiByteOfPC) ? 2 : 0);
+}
+
+//BVC Instruction
+void Cpu6502::BVC()
+{
+    Byte oldHiByteOfPC = PC & 0xFF00;
+    int nextByte = (int)mmu->readByte(PC+1);       //(int) because relative displacement after add
+    PC += S[V] ? 2 : nextByte;
+    cycles += 2 + (S[V] ? 0 : 1) + (((PC & 0xFF00) > oldHiByteOfPC) ? 2 : 0);
+}
+
+//BVS Instruction
+void Cpu6502::BVS()
+{
+    Byte oldHiByteOfPC = PC & 0xFF00;
+    int nextByte = (int)mmu->readByte(PC+1);       //(int) because relative displacement after add
+    PC += S[V] ? nextByte : 2;
+    cycles += 2 + (S[V] ? 1 : 0) + (((PC & 0xFF00) > oldHiByteOfPC) ? 2 : 0);
+}
+
+//CLC Instruction
+void Cpu6502::CLC()
+{
+    S[C] = 0;
+    cycles += 2;
+    PC ++;
+}
+
+//CLD Instruction
+void Cpu6502::CLD()
+{
+    S[D] = 0;
+    cycles += 2;
+    PC ++;
+}
+
+//CLC Instruction
+void Cpu6502::CLI()
+{
+    S[I] = 0;
+    cycles += 2;
+    PC ++;
+}
+
+//CLV Instruction
+void Cpu6502::CLV()
+{
+    S[V] = 0;
+    cycles += 2;
+    PC ++;
+}
+
+//SEC Instruction
+void Cpu6502::SEC()
+{
+    S[C] = 1;
+    cycles += 2;
+    PC ++;
+}
+
+//SED Instruction
+void Cpu6502::SED()
+{
+    S[D] = 1;
+    cycles += 2;
+    PC ++;
+}
+
+//SEI Instruction
+void Cpu6502::SEI()
+{
+    S[I] = 1;
+    cycles += 2;
+    PC ++;
 }

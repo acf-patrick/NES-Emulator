@@ -33,7 +33,8 @@ public:
     //Stack Useful Functions
     void PushPCtoStack();       //push the next instrcutions into stack before jumping to next 2 bytes (little endian)
     void PopPCfromStack();  //pop previous instructions to be executed stocked into stack after doing routines
-    
+    void PushStoSTack();    //push Satus flag register to stack
+    void PopSFromStack();   //pop Satus flag register previous value from stack
 
     /***********************LOAD/STORE Operations*********************/
     
@@ -224,7 +225,125 @@ public:
     /*******************INCREMENTS/DECREMENTS Operations*********************/
 
     //INC Instructions
+    void INC_ZP();              //Increments specific value in zero page
+    void INC_ZPX();             //Increments specific value in zero page + X
+    void INC_ABS();             //Increments specific value in absolute addressing mode 
+    void INC_ABSX();            //Increments specific value in absolute + X addressing mode
+
+    //INX Instruction
+    void INX();                 //Increments X
+
+    //INY Instruction
+    void INY();                 //Increments Y
+
+    //DEC Instructions
+    void DEC_ZP();              //Decrements specific value in zero page
+    void DEC_ZPX();             //Decrements specific value in zero page + X
+    void DEC_ABS();             //Decrements specific value in absolute addressing mode 
+    void DEC_ABSX();            //Decrements specific value in absolute + X addressing mode
+
+    //DEX Instruction
+    void DEX();                 //Decrements X
+
+    //DEY Instruction
+    void DEY();                 //Decrements Y
 
     /***********************************************************************/
+
+    /***************************SHIFTS Operations***************************/
+
+    //ASL Instructions
+    void ASL();                 //Arithmetic Shift Left with A
+    void ASL_ZP();              //Arithmetic Shift Left in zero page addressing mode
+    void ASL_ZPX();             //Arithmetic Shift Left in zero page + X addressing mode
+    void ASL_ABS();             //Arithmetic Shift Left in absolute addressing mode
+    void ASL_ABSX();            //Arithmetic Shift Left in absolute + X addressing mode
+
+    //LSR Instructions
+    void LSR();                 //Logical Shift Right with A
+    void LSR_ZP();              //Logical Shift Right in zero page addressing mode
+    void LSR_ZPX();             //Logical Shift Right in zero page + X addressing mode
+    void LSR_ABS();             //Logical Shift Right in absolute addressing mode
+    void LSR_ABSX();            //Logical Shift Right in absolute + X addressing mode
+
+    //ROL Instructions
+    void ROL();                 //Rotate Left with A
+    void ROL_ZP();              //Rotate Left in zero page addressing mode
+    void ROL_ZPX();             //Rotate Left in zero page + X addressing mode
+    void ROL_ABS();             //Rotate Left in absolute addressing mode
+    void ROL_ABSX();            //Rotate Left in absolute + X addressing mode
+
+    //ROR Instructions
+    void ROR();                 //Rotate Right with A
+    void ROR_ZP();              //Rotate Right in zero page addressing mode
+    void ROR_ZPX();             //Rotate Right in zero page + X addressing mode
+    void ROR_ABS();             //Rotate Right in absolute addressing mode
+    void ROR_ABSX();            //Rotate Right in absolute + X addressing mode
+
+    /***********************************************************************/
+
+    /***********************SYSTEM FUNCTIONS Operations**********************/
+
+    //BRK Instruction
+    void BRK();                 //Force an interrupt
+    void NOP();                 //No Operation
+    void RTI();                 //Return from Interrupt
+
+
+    /***********************************************************************/
+
+    /**************************BRANCHES Operations*************************/
+
+    //BCC Instruction
+    void BCC();                 //Branch if carry flag clear
+
+    //BCS Instruction
+    void BCS();                 //Branch if carry flag set
+
+    //BEQ Instruction
+    void BEQ();                 //Branch if zero flag set
+
+    //BMI Instruction
+    void BMI();                 //Branch if negative flag set
+
+    //BNE Instruction
+    void BNE();                 //Branch if zero flag clear
+
+    //BPL Instruction
+    void BPL();                 //Branch if negative flag clear
+
+    //BVC Instruction
+    void BVC();                 //Branch if overflow flag clear
+
+    //BVS Instruction
+    void BVS();                 //Branch if overflow flag set
+
+    /***********************************************************************/
+
+    /************************STATUS FLAGS Operations************************/
+
+    //CLC Instruction
+    void CLC();                 //Clear carry flag
+
+    //CLD Instruction
+    void CLD();                 //Clear decimal mode flag
+
+    //CLC Instruction
+    void CLI();                 //Clear interrupt disable flag
+
+    //CLC Instruction
+    void CLV();                 //Clear overflow flag
+
+    //SEC Instruction
+    void SEC();                 //Set carry flag
+
+    //SED Instruction
+    void SED();                 //Set decimal mode flag
+
+    //SEI Instruction
+    void SEI();                 //Set interrupt disable flag
+
+    /***********************************************************************/
+
 friend class Debugger;
 };
