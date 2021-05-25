@@ -4,3 +4,4 @@ main
 obj/
 .vscode/
 run.bat
+*.dll

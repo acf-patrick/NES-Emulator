@@ -1,32 +1,32 @@
 .SUFFIX:
 
-CXX = g++-10
+CXX = g++
 CFLAGS = -std=c++2a -W
 
 ifeq ($(OS), Windows_NT)
-	MOVE = move
-	CLEAN = del /Q *.o /S obj/
-	LIB = ./SDL2/lib/
+	CLEAN = del *.o
+	LIB = "C:\Program Files\CodeBlocks\MinGW\lib"
+	HEADER = "C:\Program Files\CodeBlocks\MinGW\include"
+	SDL = -lmingw32 -lSDL2main -lSDL2 -lSDL2_ttf
 else
-	MOVE = mv
-	CLEAN = rm -f test *.o -r obj/
+	CLEAN = rm -f *.o
+	LIB = ./SDL2/lib/
+	HEADER = ./SDL2/include/
+	SDL = -lSDL2 -lSDL2_ttf
 endif
 
-HEADER = ./SDL2/include/
 
 SRC = cpu6502.cpp mmu.cpp nes.cpp main.cpp debugger.cpp text.cpp box.cpp button.cpp
 
-SDL = -lSDL2 -lSDL2_ttf
 
 all : obj
 	@echo "... Link ..."
-	$(CXX) obj/* $(LIB) $(SDL) -o main
+	$(CXX) *.o -L$(LIB) $(SDL) -o main
+	@$(CLEAN)
 
 obj : $(SRC)
 	@echo "... Compile ..."
 	$(CXX) $(CFLAGS) -I$(HEADER) -c $?
-	@mkdir -p obj/
-	@$(MOVE) *.o obj/
 
 clean : 
 	@$(CLEAN)

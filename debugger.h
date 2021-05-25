@@ -4,7 +4,7 @@
 #include <map>
 #include <vector>
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
+#include "SDL2/include/SDL2/SDL_ttf.h"
 
 class Text;
 class Debugger;
