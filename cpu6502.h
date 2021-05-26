@@ -26,10 +26,6 @@ public:
     void reset();
     void step();
 
-    //Status Flag Usefuls Conversions
-    Byte StoByte();             //convert bitset<8> to byte
-    void ByteToS(Byte byte);             //convert byte to bitset<8>
-
     //Stack Useful Functions
     void PushPCtoStack();       //push the next instrcutions into stack before jumping to next 2 bytes (little endian)
     void PopPCfromStack();  //pop previous instructions to be executed stocked into stack after doing routines

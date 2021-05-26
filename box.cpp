@@ -49,7 +49,21 @@ void Box::draw()
     SDL_RenderFillRect(renderer, &viewport);
 
     if (label)
+    {
+        SDL_Point mouse;
+        SDL_GetMouseState(&mouse.x, &mouse.y); 
+        if (SDL_PointInRect(&mouse, &viewport))
+        {
+            const int offset = 3;
+            SDL_Rect ext = {
+                viewport.x - offset, label->position.y - offset,
+                viewport.w + 2*offset, label->size.y + viewport.h + 2*offset
+            };
+            SDL_SetRenderDrawColor(renderer, 22, 54, 99, 255);
+            SDL_RenderDrawRect(renderer, &ext);
+        }
         label->draw();
+    }
 
     // draw only if inside the viewport
     for (auto& pair : texts)

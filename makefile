@@ -5,28 +5,34 @@ CFLAGS = -std=c++2a -W
 
 ifeq ($(OS), Windows_NT)
 	CLEAN = del *.o
+	OBJ = *.o
 	LIB = "C:\Program Files\CodeBlocks\MinGW\lib"
 	HEADER = "C:\Program Files\CodeBlocks\MinGW\include"
 	SDL = -lmingw32 -lSDL2main -lSDL2 -lSDL2_ttf
 else
-	CLEAN = rm -f *.o
-	LIB = ./SDL2/lib/
-	HEADER = ./SDL2/include/
+	CXX = g++-10
+	OBJ = obj/*
+	CLEAN = rm -f obj/*
+	LIB = .
+	HEADER = /usr/include/SDL2/
 	SDL = -lSDL2 -lSDL2_ttf
+	MOVE = mkdir -p obj/ && mv *.o obj/
 endif
 
 
-SRC = cpu6502.cpp mmu.cpp nes.cpp main.cpp debugger.cpp text.cpp box.cpp button.cpp
+SRC = cpu6502.cpp opcode.cpp mmu.cpp nes.cpp main.cpp debugger.cpp text.cpp box.cpp button.cpp
 
 
 all : obj
 	@echo "... Link ..."
-	$(CXX) *.o -L$(LIB) $(SDL) -o main
+	$(CXX) $(OBJ) -L$(LIB) $(SDL) -o main
 	@$(CLEAN)
 
+NAME := $(shell uname)
 obj : $(SRC)
 	@echo "... Compile ..."
 	$(CXX) $(CFLAGS) -I$(HEADER) -c $?
+	@$(MOVE)
 
 clean : 
 	@$(CLEAN)
