@@ -1,9 +1,9 @@
-#include "opcode.cpp"
+#include "cpu6502.h"
 
 Cpu6502::Cpu6502(Mmu *_mmu)
 {
     A = X = Y = 0;
-    PC = 0xFFEC;    //  program usually start at 0xFFFC 
+    PC = 0xC184;    //  program usually start at 0xFFFC 
     SP = 0xFF;      //  Satck grow bottom top so 0x1FF to 0x100 (in the first page memory)
     S.reset();      //  set all bits to zero
     mmu = _mmu;
@@ -26,7 +26,6 @@ void Cpu6502::reset()            //Reset members to default state
 void Cpu6502::step()
 {
     currentOpcode = mmu->readByte(PC);      //getting the current opcode at RAM[PC] (aka: FETCHING ;-) )
-    //std::cout << "CurrentOpcode: " << std::hex << (int)currentOpcode << ", at PC = " << std::hex << (int)PC << std::endl;
     switch (currentOpcode)                  //finding what the current opcode is and do the appropriate function (aka: DECODING and EXECUTING ;-) )      
     {
 
@@ -301,19 +300,6 @@ void Cpu6502::step()
             std::cout << "Unknown Opcode = 0x" << std::hex << (int)currentOpcode << std::endl;
         break;
     }
-    /* starting from here, its just for testing LDA , must delete after understanding LDA*/
-    std::cout << "A = " << std::hex << (int)A << std::endl;
-    std::cout << "X = " << std::hex << (int)X << std::endl;
-    std::cout << "Y = " << std::hex << (int)Y << std::endl;
-    std::cout << "PC = " << std::hex << (int)PC << std::endl;
-    for (int i=0; i<5; i++)
-        std::cout << "[" << std::hex << (int)0x01FF - i << "] = " << std::hex << (int)mmu->readByte(0x01FF - i) << std::endl;
-    std::cout << "S : NVB*DIZC" << std::endl;
-    std::cout << "    ";
-    for (int i=0; i<8; i++)
-        std::cout << S[i];
-    std::cout << std::endl;
-    /*end here*/
 }
 
 //Stack Useful Functions
@@ -333,7 +319,7 @@ void Cpu6502::PushStoSTack()
 
 void Cpu6502::PopPCfromStack()
 {
-    Word value = (mmu->readByte(0x0100 | (SP+1)) << 8) | mmu->readByte(0x0100 | SP+2);      //getting 2 bytes from first page at SP in little endianess
+    Word value = (mmu->readByte(0x0100 | (SP+1)) << 8) | mmu->readByte(0x0100 | (SP+2));      //getting 2 bytes from first page at SP in little endianess
     mmu->writeByte(0, 0x0100 | (SP+2));         //zero-ing previous value of previous stack
     mmu->writeByte(0, 0x0100 | (SP+1));
     SP += 2;                                    //incrementing SP by 2 because we're poping (Stack grows downard)
