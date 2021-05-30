@@ -52,6 +52,7 @@ void Cpu6502::step()
 
     instructions[currentOpcode].opcode();   // execute the appropriate function  
     
+#ifdef SHOW_CLI_DEBUGGER // Just add #define SHOW_CLI_DEBUGGER ontop of the file to enable
     /* starting from here, its just for testing LDA , must delete after understanding LDA*/
     std::cout << "A = " << std::hex << (int)A << std::endl;
     std::cout << "X = " << std::hex << (int)X << std::endl;
@@ -65,6 +66,7 @@ void Cpu6502::step()
         std::cout << S[i];
     std::cout << std::endl;
     /*end here*/
+#endif
 }
 
 //Stack Useful Functions

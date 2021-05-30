@@ -28,7 +28,6 @@ SRC = opcode.cpp cpu6502.cpp mmu.cpp nes.cpp main.cpp debugger.cpp text.cpp box.
 all : obj
 	@echo "... Link ..."
 	$(CXX) $(OBJ) -L$(LIB) $(SDL) -o main
-	@$(CLEAN)
 
 obj : $(SRC)
 	@$(CLEAN_SCREEN)

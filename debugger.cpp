@@ -9,17 +9,17 @@ SDL_Renderer* Debugger::renderer = nullptr;
 
 Debugger::Debugger(Cpu6502* c, int& s) : cpu(*c), step(s)
 {
-    const int width = WIDTH, height = HEIGHT;
+    const int width = WIDTH+10, height = HEIGHT;
     window = SDL_CreateWindow("Debugger", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_MOUSE_FOCUS);
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-    const SDL_Point padding = { 15, 10 };
+    const SDL_Point padding = { 5, 10 };
     const int interline = 7;
     Text* prev;
 
 // registers
     div["register"] = new Box({
-        5, 5, width/2-10, height/2-10
+        5, 5, width/2+5, height/2-10
     });
     auto& reg = *div["register"];
     // setup
@@ -32,7 +32,7 @@ Debugger::Debugger(Cpu6502* c, int& s) : cpu(*c), step(s)
     prev = reg.push("STATUS", " STATUS : ", padding);
     std::vector<std::string> bits = { "N", "V", "-", "B", "D", "I", "Z", "C" };
     for (auto& bit : bits)
-        prev = reg.push(bit, bit+"   ", { prev->getRight(), padding.y });
+        prev = reg.push(bit, bit+" ", { prev->getRight(), padding.y });
     reg["-"]->setColor(255, 0, 0); // always red
 
     std::vector<std::string> keys = { "PC", "A", "X", "Y", "SP" };
@@ -42,7 +42,7 @@ Debugger::Debugger(Cpu6502* c, int& s) : cpu(*c), step(s)
 // memory
     // create the box
     div["memory"] = new Box({
-        width/2+5, 5, width/2-10, height/2-10
+        (reg.viewport.w+reg.viewport.x)+5, 5, width/2-20, height/2-10
     });
     auto& mem = *div["memory"];
     // setup
@@ -108,8 +108,8 @@ void Debugger::update()
         {"C", cpu.C}
     };
     SDL_Color color[2] = {
-        { 255, 0, 0, 255 }, // OFF
-        { 0, 255, 0, 255 } //ON
+        { 155, 0, 0, 255 }, // OFF
+        { 192, 255, 91, 255 } //ON
     };
     auto& reg = *div["register"];
     for (auto& pair : bind)

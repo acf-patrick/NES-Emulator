@@ -20,7 +20,7 @@ Text::Text(const std::string& t, const SDL_Point& p, SDL_Rect& v) :
     {
         screen.x = screen.y = 0;
         SDL_GetWindowSize(Debugger::window, &screen.w, &screen.h);
-        font = TTF_OpenFont("Ubuntu-M.ttf", 15);
+        font = TTF_OpenFont("font.ttf", 10);
     }
     setText(t);
 }
@@ -32,7 +32,7 @@ Text::Text(const std::string& t, const SDL_Point& p) :
     {
         screen.x = screen.y = 0;
         SDL_GetWindowSize(Debugger::window, &screen.w, &screen.h);
-        font = TTF_OpenFont("Ubuntu-M.ttf", 15);
+        font = TTF_OpenFont("font.ttf", 10);
     }
     setText(t);
 }
