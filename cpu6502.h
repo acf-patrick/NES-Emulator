@@ -46,8 +46,6 @@ public:
 
     /***********************LOAD/STORE Operations*********************/
     
-    void NONE() {}           // Does nothing
-
     //LDA Instructions
     void LDA_IMM();          //loading A register with immediate addressing mode
     void LDA_ZP();           //loading A register with zero page addressing mode

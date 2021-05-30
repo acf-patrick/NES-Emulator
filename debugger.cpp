@@ -13,13 +13,13 @@ Debugger::Debugger(Cpu6502* c, int& s) : cpu(*c), step(s)
     window = SDL_CreateWindow("Debugger", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_MOUSE_FOCUS);
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-    const SDL_Point padding = { 5, 10 };
+    const SDL_Point padding = { 5, 7 };
     const int interline = 7;
     Text* prev;
 
 // registers
     div["register"] = new Box({
-        5, 5, width/2+5, height/2-10
+        5, 5, width/2+5, height/4 + 10
     });
     auto& reg = *div["register"];
     // setup
@@ -38,11 +38,19 @@ Debugger::Debugger(Cpu6502* c, int& s) : cpu(*c), step(s)
     std::vector<std::string> keys = { "PC", "A", "X", "Y", "SP" };
     for (auto& key : keys)
         prev = reg.push(key, " "+key+" : ", { padding.x, prev->getDown()+interline });
+
+// instructions
+    div["instruction"] = new Box({
+        5, (reg.viewport.y+reg.viewport.h)+5, reg.viewport.w, height/4-10
+    });
+    auto& inst = *div["instruction"];
+    inst.setLabel("instructions");
+    inst.push("first", " ", padding );   // dunno what to put so we'll just show the currentOpc
     
 // memory
     // create the box
     div["memory"] = new Box({
-        (reg.viewport.w+reg.viewport.x)+5, 5, width/2-20, height/2-10
+        (reg.viewport.w+reg.viewport.x)+5, 5, width/2-20, height/2+19
     });
     auto& mem = *div["memory"];
     // setup
@@ -63,18 +71,18 @@ Debugger::Debugger(Cpu6502* c, int& s) : cpu(*c), step(s)
 
 // buttons
     Button::colors = {
-        { "idle"    , { 69, 69, 69, 255 } },
-        { "hover"   , { 80, 80, 80, 255 } },
-        { "pressed" , { 45, 45, 45, 255 } }
+        { "idle"    , {  69,  69,  69, 255 } },
+        { "hover"   , { 120, 120, 120, 255 } },
+        { "pressed" , {  45,  45,  45, 255 } }
     };
 
-    auto& reg_v = div["register"]->viewport;
+    auto& v = inst.viewport;
     Button *b, *p;
     int y;
 
     b = buttons["step"] = new Button("step");
-    y = reg_v.y+reg_v.h - (b->size.y+2*b->padding.y+5);
-    b->position = { reg_v.x+5, y };
+    y = v.y + v.h - (b->size.y+2*b->padding.y+5);
+    b->position = { v.x + 5, y };
     p = b;
 
     b = buttons["continue"] = new Button("continue");
@@ -125,6 +133,10 @@ void Debugger::update()
     reg["X"]->text  = ""; (*reg["X"])  << "  X : $"  << cpu.X;
     reg["Y"]->text  = ""; (*reg["Y"])  << "  Y : $"  << cpu.Y;
 
+    auto& i = *div["instruction"];
+    auto& instruction = cpu.instructions[cpu.currentOpcode];
+    i["first"]->text = ""; (*i["first"]) << " $" << cpu.currentOpcode << " : " << instruction.mnemonic << " {" << instruction.addressingMode << "} ";
+
     // memory
     auto& mem = *div["memory"];
     for (Word address = 0x01FF; address >= 0x0100; --address)
@@ -147,7 +159,10 @@ void Debugger::handle(SDL_Event& event)
         return;
 
     const int diff = 7;
-
+/*
+    if (event.type == SDL_MOUSEBUTTONUP)
+        std::cout << event.button.x << ", " << event.button.y << std::endl;
+*/
     for (auto& pair : div)
     {
         auto& box = *pair.second;
