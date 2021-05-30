@@ -9,6 +9,7 @@ ifeq ($(OS), Windows_NT)
 	LIB = "C:\Program Files\CodeBlocks\MinGW\lib"
 	HEADER = "C:\Program Files\CodeBlocks\MinGW\include"
 	SDL = -lmingw32 -lSDL2main -lSDL2 -lSDL2_ttf
+	CLEAN_SCREEN = cls
 else
 	CXX = g++-10
 	OBJ = obj/*
@@ -17,6 +18,7 @@ else
 	HEADER = /usr/include/SDL2/
 	SDL = -lSDL2 -lSDL2_ttf
 	MOVE = mkdir -p obj/ && mv *.o obj/
+	CLEAN_SCREEN = clear
 endif
 
 
@@ -28,8 +30,8 @@ all : obj
 	$(CXX) $(OBJ) -L$(LIB) $(SDL) -o main
 	@$(CLEAN)
 
-NAME := $(shell uname)
 obj : $(SRC)
+	@$(CLEAN_SCREEN)
 	@echo "... Compile ..."
 	$(CXX) $(CFLAGS) -I$(HEADER) -c $?
 	@$(MOVE)

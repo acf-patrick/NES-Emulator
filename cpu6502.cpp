@@ -3,7 +3,7 @@
 Cpu6502::Cpu6502(Mmu *_mmu)
 {
     A = X = Y = 0;
-    PC = 0xFFEC;    //  program usually start at 0xFFFC 
+    PC = 0xC184;    //  program usually start at 0xFFFC 
     SP = 0xFF;      //  Satck grow bottom top so 0x1FF to 0x100 (in the first page memory)
     S.reset();      //  set all bits to zero
     mmu = _mmu;
@@ -84,7 +84,7 @@ void Cpu6502::PushStoSTack()
 
 void Cpu6502::PopPCfromStack()
 {
-    Word value = (mmu->readByte(0x0100 | (SP+1)) << 8) | mmu->readByte(0x0100 | SP+2);      //getting 2 bytes from first page at SP in little endianess
+    Word value = (mmu->readByte(0x0100 | (SP+1)) << 8) | mmu->readByte(0x0100 | (SP+2));      //getting 2 bytes from first page at SP in little endianess
     mmu->writeByte(0, 0x0100 | (SP+2));         //zero-ing previous value of previous stack
     mmu->writeByte(0, 0x0100 | (SP+1));
     SP += 2;                                    //incrementing SP by 2 because we're poping (Stack grows downard)
