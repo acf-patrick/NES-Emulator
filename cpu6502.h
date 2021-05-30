@@ -2,6 +2,8 @@
 
 #include "defs.h"
 #include "mmu.h"
+#include <functional>
+#include <vector>
 
 class Debugger;
 
@@ -32,8 +34,20 @@ public:
     void PushStoSTack();    //push Satus flag register to stack
     void PopSFromStack();   //pop Satus flag register previous value from stack
 
+    // type used to store instruction information
+    struct Instruction
+    {
+        std::string mnemonic;
+        std::string addressingMode;
+        std::function<void(void)> opcode;
+    };
+    std::vector<Instruction> instructions;	// Our instructions, initialized inside the constructor
+                                            // Use the instruction hex as index. e.g : ADC absolute  : 0x6D = 109, 6-th line, 13-th column
+
     /***********************LOAD/STORE Operations*********************/
     
+    void NONE() {}           // Does nothing
+
     //LDA Instructions
     void LDA_IMM();          //loading A register with immediate addressing mode
     void LDA_ZP();           //loading A register with zero page addressing mode

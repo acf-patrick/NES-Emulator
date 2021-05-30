@@ -12,7 +12,7 @@ ifeq ($(OS), Windows_NT)
 else
 	CXX = g++-10
 	OBJ = obj/*
-	CLEAN = rm -f obj/*
+	CLEAN = rm *.o -rf obj/
 	LIB = .
 	HEADER = /usr/include/SDL2/
 	SDL = -lSDL2 -lSDL2_ttf
@@ -20,7 +20,7 @@ else
 endif
 
 
-SRC = cpu6502.cpp opcode.cpp mmu.cpp nes.cpp main.cpp debugger.cpp text.cpp box.cpp button.cpp
+SRC = opcode.cpp cpu6502.cpp mmu.cpp nes.cpp main.cpp debugger.cpp text.cpp box.cpp button.cpp
 
 
 all : obj

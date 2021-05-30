@@ -1,4 +1,4 @@
-#include "opcode.cpp"
+#include "cpu6502.h"
 
 Cpu6502::Cpu6502(Mmu *_mmu)
 {
@@ -8,6 +8,28 @@ Cpu6502::Cpu6502(Mmu *_mmu)
     S.reset();      //  set all bits to zero
     mmu = _mmu;
     cycles = 0;
+
+    using c = Cpu6502;
+    // used when the program attempt to use an illegal opcode
+    Instruction illegal = Instruction{ "Unknown Opcode", "", [this](){ NONE(); } };
+    instructions = {        // we then initialize the list
+        Instruction{ "BRK", "impl", [this](){ BRK(); } }, Instruction{ "ORA", "X, ind", [this](){ ORA_IX(); } }, illegal, illegal, illegal, Instruction{ "ORA", "zpg", [this](){ ORA_ZP(); } }, Instruction{ "ASL", "zpg", [this](){ ASL_ZP(); } }, illegal, Instruction{ "PHP", "impl", [this](){ PHP(); } }, Instruction{ "ORA", "immediate", [this](){ ORA_IMM(); } }, Instruction{ "ASL", "A", [this](){ ASL(); } }, illegal, illegal, Instruction{ "ORA", "abs", [this](){ ORA_ABS(); } }, Instruction{ "ASL", "abs", [this](){ ASL_ABS(); } }, illegal,
+        Instruction{ "BPL", "rel", [this](){ BPL(); } },  Instruction{ "ORA", "ind, Y", [this](){ ORA_IY(); } }, illegal, illegal, illegal, Instruction{ "ORA", "zpg, X", [this](){ ORA_ZPX(); } }, Instruction{ "ASL", "zpg, X", [this](){ ASL_ZPX(); } }, illegal, Instruction{ "CLC", "impl", [this](){ CLC(); } }, Instruction{ "ORA", "abs, Y", [this](){ ORA_ABSY(); } }, illegal, illegal, illegal, Instruction{ "ORA", "abs, X", [this](){ ORA_ABSX(); } }, Instruction{ "ASL", "abs, X", [this](){ ASL_ABSX(); } }, illegal,
+        Instruction{ "JSR", "abs", [this](){ JSR(); } },  Instruction{ "AND", "X, ind", [this](){ AND_IX(); } }, illegal, illegal, Instruction{ "BIT", "zpg", [this](){ BIT_ZP(); } }, Instruction{ "AND", "zpg", [this](){ AND_ZP(); } }, Instruction{ "ROL", "zpg", [this](){ ROL_ZP(); } }, illegal, Instruction{ "PLP", "impl", [this](){ PLP(); } }, Instruction{ "AND", "immediate", [this](){ AND_IMM(); } }, Instruction{ "ROL", "A", [this](){ ROL(); } }, illegal, Instruction{ "BIT", "abs", [this](){ BIT_ABS(); } }, Instruction{ "AND", "abs", [this](){ AND_ABS(); } }, Instruction{ "ROL", "abs", [this](){ ROL_ABS(); } }, illegal,
+        Instruction{ "BMI", "rel", [this](){ BMI(); } },  Instruction{ "AND", "ind, Y", [this](){ AND_IY(); } }, illegal, illegal, illegal, Instruction{ "AND", "zpg, X", [this](){ AND_ZPX(); } }, Instruction{ "ROL", "zpg, X", [this](){ ROL_ZPX(); } }, illegal, Instruction{ "SEC", "impl", [this](){ SEC(); } }, Instruction{ "AND", "abs, Y", [this](){ AND_ABSY(); } }, illegal, illegal, illegal, Instruction{ "AND", "abs, X", [this](){ AND_ABSX(); } }, Instruction{ "ROL", "abs, X", [this](){ ROL_ABSX(); } }, illegal,
+        Instruction{ "RTI", "impl", [this](){ RTI(); } }, Instruction{ "EOR", "X, ind", [this](){ EOR_IX(); } }, illegal, illegal, illegal, Instruction{ "EOR", "zpg", [this](){ EOR_ZP(); } }, Instruction{ "LSR", "zpg", [this](){ LSR_ZP(); } }, illegal, Instruction{ "PHA", "impl", [this](){ PHA(); } }, Instruction{ "EOR", "immediate", [this](){ EOR_IMM(); } }, Instruction{ "LSR", "A", [this](){ LSR(); } }, illegal, Instruction{ "JMP", "abs", [this](){ JMP_ABS(); } }, Instruction{ "EOR", "abs", [this](){ EOR_ABS(); } }, Instruction{ "LSR", "abs", [this](){ LSR_ABS(); } }, illegal,
+        Instruction{ "BVC", "rel", [this](){ BVC(); } },  Instruction{ "EOR", "ind, Y", [this](){ EOR_IY(); } }, illegal, illegal, illegal, Instruction{ "EOR", "zpg, X", [this](){ EOR_ZPX(); } }, Instruction{ "LSR", "zpg, X", [this](){ LSR_ZPX(); } }, illegal, Instruction{ "CLI", "impl", [this](){ CLI(); } }, Instruction{ "EOR", "abs, Y", [this](){ EOR_ABSY(); } }, illegal, illegal, illegal, Instruction{ "EOR", "abs, X", [this](){ EOR_ABSX(); } }, Instruction{ "LSR", "abs, X", [this](){ LSR_ABSX(); } }, illegal,
+        Instruction{ "RTS", "impl", [this](){ RTS(); } }, Instruction{ "ADC", "X, ind", [this](){ ADC_IX(); } }, illegal, illegal, illegal, Instruction{ "ADC", "zpg", [this](){ ADC_ZP(); } }, Instruction{ "ROR", "zpg", [this](){ ROR_ZP(); } }, illegal, Instruction{ "PLA", "impl", [this](){ PLA(); } }, Instruction{ "ADC", "immediate", [this](){ ADC_IMM(); } }, Instruction{ "ROR", "A", [this](){ ROR(); } }, illegal, Instruction{ "JMP", "ind", [this](){ JMP_I(); } }, Instruction{ "ADC", "abs", [this](){ ADC_ABS(); } }, Instruction{ "ROR", "abs", [this](){ ROR_ABS(); } }, illegal,
+        Instruction{ "BVS", "rel", [this](){ BVS(); } },  Instruction{ "ADC", "ind, Y", [this](){ ADC_IY(); } }, illegal, illegal, illegal, Instruction{ "ADC", "zpg, X", [this](){ ADC_ZPX(); } }, Instruction{ "ROR", "zpg, X", [this](){ ROR_ZPX(); } }, illegal, Instruction{ "SEI", "impl", [this](){ SEI(); } }, Instruction{ "ADC", "abs, Y", [this](){ ADC_ABSY(); } }, illegal, illegal, illegal, Instruction{ "ADC", "abs", [this](){ ADC_ABS(); } }, Instruction{ "ROR", "abs, X", [this](){ ROR_ABSX(); } }, illegal,
+        illegal, Instruction{ "STA", "X, ind", [this](){ STA_IX(); } }, illegal, illegal, Instruction{ "STY", "zpg", [this](){ STY_ZP(); } }, Instruction{ "STA", "zpg", [this](){ STA_ZP(); } }, Instruction{ "STX", "zpg", [this](){ STX_ZP(); } }, illegal, Instruction{ "DEY", "impl", [this](){ DEY(); } }, illegal, Instruction{ "TXA", "impl", [this](){ TXA(); } }, illegal, Instruction{ "STY", "abs", [this](){ STY_ABS(); } }, Instruction{ "STX", "abs", [this](){ STX_ABS(); } }, illegal,
+        Instruction{ "BCC", "rel", [this](){ BCC(); } }, Instruction{ "STA", "ind, Y", [this](){ STA_IY(); } }, illegal, illegal, Instruction{ "STY", "zpg, X", [this](){ STY_ZPX(); } }, Instruction{ "STA", "zpg, X", [this](){ STA_ZPX(); } }, Instruction{ "STX", "zpg, Y", [this](){ STX_ZPY(); } }, illegal, Instruction{ "TYA", "impl", [this](){ TYA(); } }, Instruction{ "STA", "abs, Y", [this](){ STA_ABSY(); } }, Instruction{ "TXS", "impl", [this](){ TXS(); } }, illegal, illegal, Instruction{ "STA", "abs, X", [this](){ STA_ABSX(); } }, illegal, illegal,
+        Instruction{ "LDY", "immeditate", [this](){ LDY_IMM(); } }, Instruction{ "LDA", "X, ind", [this](){ LDA_IX(); } }, Instruction{ "LDX", "immediate", [this](){ LDX_IMM(); } }, illegal, Instruction{ "LDY", "zpg", [this](){ LDY_ZP(); } }, Instruction{ "LDA", "zpg", [this](){ LDA_ZP(); } }, Instruction{ "LDX", "zpg", [this](){ LDX_ZP(); } }, illegal, Instruction{ "TAY", "impl", [this](){ TAY(); } }, Instruction{ "LDA", "immediate", [this](){ LDA_IMM(); } }, Instruction{ "TAX", "impl", [this](){ TAX(); } }, illegal, Instruction{ "LDY", "abs", [this](){ LDY_ABS(); } }, Instruction{ "LDA", "abs", [this](){ LDA_ABS(); } }, Instruction{ "LDX", "abs", [this](){ LDX_ABS(); } }, illegal,
+        Instruction{ "BCS", "rel", [this](){ BCS(); } }, Instruction{ "LDA", "ind, Y", [this](){ LDA_IY(); } }, illegal, illegal, Instruction{ "LDY", "zpg, X", [this](){ LDY_ZPX(); } }, Instruction{ "LDA", "zpg, X", [this](){ LDA_ZPX(); } }, Instruction{ "LDX", "zpg, Y", [this](){ LDX_ZPY(); } }, illegal, Instruction{ "CLV", "impl", [this](){ CLV(); } }, Instruction{ "LDA", "abs, Y", [this](){ LDA_ABSY(); } }, Instruction{ "TSX", "impl", [this](){ TSX(); } }, illegal, Instruction{ "LDY", "abs, X", [this](){ LDY_ABSX(); } }, Instruction{ "LDA", "abs, X", [this](){ LDA_ABSX(); } }, Instruction{ "LDX", "abs, Y", [this](){ LDX_ABSY(); } }, illegal,
+        Instruction{ "CPY", "immediate", [this](){ CPY_IMM(); } }, Instruction{ "CMP", "X, ind", [this](){ CMP_IX(); } }, illegal, illegal, Instruction{ "CPY", "zpg", [this](){ CPY_ZP(); } }, Instruction{ "CMP", "zpg", [this](){ CMP_ZP(); } }, Instruction{ "DEC", "zpg", [this](){ DEC_ZP(); } }, illegal, Instruction{ "INY", "impl", [this](){ INY(); } }, Instruction{ "CMP", "immediate", [this](){ CMP_IMM(); } }, Instruction{ "DEX", "impl", [this](){ DEX(); } }, illegal, Instruction{ "CPY", "abs", [this](){ CPY_ABS(); } }, Instruction{ "CMP", "abs", [this](){ CMP_ABS(); } }, Instruction{ "DEC", "abs", [this](){ DEC_ABS(); } }, illegal,
+        Instruction{ "BNE", "rel", [this](){ BNE(); } }, Instruction{ "CMP", "ind, Y", [this](){ CMP_IY(); } }, illegal, illegal, illegal, Instruction{ "CMP", "zpg, X", [this](){ CMP_ZPX(); } }, Instruction{ "DEC", "zpg, X", [this](){ DEC_ZPX(); } }, illegal, Instruction{ "CLD", "impl", [this](){ CLD(); } }, Instruction{ "CMP", "abs, Y", [this](){ CMP_ABSY(); } }, illegal, illegal, illegal, Instruction{ "CMP", "abs, X", [this](){ CMP_ABSX(); } }, Instruction{ "DEC", "abs, X", [this](){ DEC_ABSX(); } }, illegal,
+        Instruction{ "CPX", "immediate", [this](){ CPX_IMM(); } }, Instruction{ "SBC", "X, ind", [this](){ SBC_IX(); } }, illegal, illegal, Instruction{ "CPX", "zpg", [this](){ CPX_ZP(); } }, Instruction{ "SBC", "zpg", [this](){ SBC_ZP(); } }, Instruction{ "INC", "zpg", [this](){ INC_ZP(); } }, illegal, Instruction{ "INX", "impl", [this](){ INX(); } }, Instruction{ "SBC", "immediate", [this](){ SBC_IMM(); } }, Instruction{ "NOP", "impl", [this](){ NOP(); } }, illegal, Instruction{ "CPX", "abs", [this](){ CPX_ABS(); } }, Instruction{ "SBC", "abs", [this](){ SBC_ABS(); } }, Instruction{ "INC", "abs", [this](){ INC_ABS(); } }, illegal,
+        Instruction{ "BEQ", "rel", [this](){ BEQ(); } }, Instruction{ "SBC", "ind, Y", [this](){ SBC_IY(); } }, illegal, illegal, illegal, Instruction{ "SBC", "zpg, X", [this](){ SBC_ZPX(); } }, Instruction{ "INC", "zpg, X", [this](){ INC_ZPX(); } }, illegal, Instruction{ "SED", "impl", [this](){ SED(); } }, Instruction{ "SBC", "abs, Y", [this](){ SBC_ABSY(); } }, illegal, illegal, illegal, Instruction{ "SBC", "abs, X", [this](){ SBC_ABSX(); } }, Instruction{ "INC", "abs, X", [this](){ INC_ABSX(); } }, illegal
+    };
 }
 
 Cpu6502::~Cpu6502()
@@ -27,280 +49,9 @@ void Cpu6502::step()
 {
     currentOpcode = mmu->readByte(PC);      //getting the current opcode at RAM[PC] (aka: FETCHING ;-) )
     //std::cout << "CurrentOpcode: " << std::hex << (int)currentOpcode << ", at PC = " << std::hex << (int)PC << std::endl;
-    switch (currentOpcode)                  //finding what the current opcode is and do the appropriate function (aka: DECODING and EXECUTING ;-) )      
-    {
 
-        /*******************LOAD/STORE INSTRUCTIONS*******************/
-        //LDA Instructions
-        case 0xA9:   LDA_IMM();    break;
-        case 0xA5:   LDA_ZP();     break;
-        case 0xB5:   LDA_ZPX();    break;
-        case 0xAD:   LDA_ABS();    break;
-        case 0xBD:   LDA_ABSX();   break;
-        case 0xB9:   LDA_ABSY();   break;
-        case 0xA1:   LDA_IX();     break;
-        case 0xB1:   LDA_IY();     break;
-
-        //LDX Instructions
-        case 0xA2:   LDX_IMM();    break;
-        case 0xA6:   LDX_ZP();     break;
-        case 0xB6:   LDX_ZPY();    break;
-        case 0xAE:   LDX_ABS();    break;
-        case 0xBE:   LDX_ABSY();   break;
-
-        //LDY Instructions
-        case 0xA0:   LDY_IMM();    break;
-        case 0xA4:   LDY_ZP();     break;
-        case 0xB4:   LDY_ZPX();    break;
-        case 0xAC:   LDY_ABS();    break;
-        case 0xBC:   LDY_ABSX();   break;
-
-        //STA Instructions
-        case 0x85:   STA_ZP();     break;
-        case 0x95:   STA_ZPX();    break;
-        case 0x8D:   STA_ABS();    break;
-        case 0x9D:   STA_ABSX();   break;
-        case 0x99:   STA_ABSY();   break;
-        case 0x81:   STA_IX();     break;
-        case 0x91:   STA_IY();     break;
-
-        //STX Instructions
-        case 0x86:   STX_ZP();    break;
-        case 0x96:   STX_ZPY();   break;
-        case 0x8E:   STX_ABS();   break;
-
-        //STY Instructions
-        case 0x84:   STY_ZP();    break;
-        case 0x94:   STY_ZPX();   break;
-        case 0x8C:   STY_ABS();   break;
-
-
-        /*******************JUMP AND CALLS INSTRUCTIONS*******************/
-        //JSR Instruction
-        case 0x20:   JSR();   break;
-        
-        //RTS Instruction
-        case 0x60:   RTS();    break;
-
-        //JMP Instruction
-        case 0x4C:   JMP_ABS();   break;
-        case 0x6C:   JMP_I();     break;
-
-        /********************REGISTER TRANSFERS Operations****************/
-        //TAX Instruction
-        case 0xAA:   TAX();   break;
-        //TAY Instruction
-        case 0xA8:   TAY();   break;
-        //TXA Instruction
-        case 0x8A:   TXA();   break;
-        //TYA Instruction
-        case 0x98:   TYA();   break;
-
-        /**************************STACK Operations***********************/
-        //TSX Instruction
-        case 0xBA:   TSX();   break;
-        //TXS Instruction
-        case 0x9A:   TXS();   break;
-        //PHA Instruction
-        case 0x48:   PHA();   break;
-        //PHP Instruction
-        case 0x08:   PHP();   break;
-        //PLA Instruction
-        case 0x68:   PLA();   break;
-        //PLP Instruction
-        case 0x28:   PLP();   break;
-        
-        /**************************LOGICAL Operations***********************/
-        //AND Instructions
-        case 0x29:   AND_IMM();  break;
-        case 0x25:   AND_ZP();   break;
-        case 0x35:   AND_ZPX();  break;
-        case 0x2D:   AND_ABS();  break;
-        case 0x3D:   AND_ABSX(); break;
-        case 0x39:   AND_ABSY(); break;
-        case 0x21:   AND_IX();   break;
-        case 0x31:   AND_IY();   break;
-
-        //EOR INstructions
-        case 0x49:   EOR_IMM();   break;
-        case 0x45:   EOR_ZP();    break;
-        case 0x55:   EOR_ZPX();   break;
-        case 0x4D:   EOR_ABS();   break;
-        case 0x5D:   EOR_ABSX();  break;
-        case 0x59:   EOR_ABSY();  break;
-        case 0x41:   EOR_IX();    break;
-        case 0x51:   EOR_IY();    break;
-
-        //ORA INstructions
-        case 0x09:   ORA_IMM();   break;
-        case 0x05:   ORA_ZP();    break;
-        case 0x15:   ORA_ZPX();   break;
-        case 0x0D:   ORA_ABS();   break;
-        case 0x1D:   ORA_ABSX();  break;
-        case 0x19:   ORA_ABSY();  break;
-        case 0x01:   ORA_IX();    break;
-        case 0x11:   ORA_IY();    break;
-
-        //BIT Instructions
-        case 0x24:   BIT_ZP();    break;
-        case 0x2C:   BIT_ABS();   break;
-
-        /**************************ARITHMETICS Operations***********************/
-        //ADC Instructions
-        case 0x69:   ADC_IMM();   break;
-        case 0x65:   ADC_ZP();    break;
-        case 0x75:   ADC_ZPX();   break;
-        case 0x6D:   ADC_ABS();   break;
-        case 0x7D:   ADC_ABSX();  break;
-        case 0x79:   ADC_ABSY();  break;
-        case 0x61:   ADC_IX();    break;
-        case 0x71:   ADC_IY();    break;
-
-        //SBC Instructions
-        case 0xE9:   SBC_IMM();   break;
-        case 0xE5:   SBC_ZP();    break;
-        case 0xF5:   SBC_ZPX();   break;
-        case 0xED:   SBC_ABS();   break;
-        case 0xFD:   SBC_ABSX();  break;
-        case 0xF9:   SBC_ABSY();  break;
-        case 0xE1:   SBC_IX();    break;
-        case 0xF1:   SBC_IY();    break;
-
-        //CMP Instruction
-        case 0xC9:   CMP_IMM();   break;
-        case 0xC5:   CMP_ZP();    break;
-        case 0xD5:   CMP_ZPX();   break;
-        case 0xCD:   CMP_ABS();   break;
-        case 0xDD:   CMP_ABSX();  break;
-        case 0xD9:   CMP_ABSY();  break;
-        case 0xC1:   CMP_IX();    break;
-        case 0xD1:   CMP_IY();    break;
-
-        //CPX Instructions
-        case 0xE0:   CPX_IMM();   break;
-        case 0xE4:   CPX_ZP();    break;
-        case 0xEC:   CPX_ABS();   break;
-
-        //CPY Instructions
-        case 0xC0:   CPY_IMM();   break;
-        case 0xC4:   CPY_ZP();    break;
-        case 0xCC:   CPY_ABS();   break;
-        
-        /*******************INCREMENTS/DECREMENTS Operations*********************/
-        //INC Instructions
-        case 0xE6:  INC_ZP();   break;
-        case 0xF6:  INC_ZPX();  break;
-        case 0xEE:  INC_ABS();  break;
-        case 0xFE:  INC_ABSX(); break;
-
-        //INX Instruction
-        case 0xE8: INX(); break;
-
-        //INY Instruction
-        case 0xC8: INY(); break;
-
-        //DEC Instructions
-        case 0xC6:  DEC_ZP();   break;
-        case 0xD6:  DEC_ZPX();  break;
-        case 0xCE:  DEC_ABS();  break;
-        case 0xDE:  DEC_ABSX(); break;
-
-        //DEX Instruction
-        case 0xCA: DEX(); break;
-
-        //DEX Instruction
-        case 0x88: DEY(); break;
-
-        /***************************SHIFTS Operations***************************/
-        //ASL Instructions
-        case 0x0A:  ASL();      break;
-        case 0x06:  ASL_ZP();   break;
-        case 0x16:  ASL_ZPX();  break;
-        case 0x0E:  ASL_ABS();  break;
-        case 0x1E:  ASL_ABSX(); break;
-
-        //LSR Instructions
-        case 0x4A:  LSR();      break;
-        case 0x46:  LSR_ZP();   break;
-        case 0x56:  LSR_ZPX();  break;
-        case 0x4E:  LSR_ABS();  break;
-        case 0x5E:  LSR_ABSX(); break;
-
-        //ROL Instructions
-        case 0x2A:  ROL();      break;
-        case 0x26:  ROL_ZP();   break;
-        case 0x36:  ROL_ZPX();  break;
-        case 0x2E:  ROL_ABS();  break;
-        case 0x3E:  ROL_ABSX(); break;
-
-        //ROR Instructions
-        case 0x6A:  ROR();      break;
-        case 0x66:  ROR_ZP();   break;
-        case 0x76:  ROR_ZPX();  break;
-        case 0x6E:  ROR_ABS();  break;
-        case 0x7E:  ROR_ABSX(); break;
-
-        /***********************SYSTEM FUNCTIONS Operations**********************/
-        //BRK Instruction
-        case 0x00:  BRK();  break;
-
-        //NOP Instruction
-        case 0xEA:  NOP();  break;
-
-        //RTI Instruction
-        case 0x40:  RTI();  break;
-
-        /**************************BRANCHES Operations*************************/
-        //BCC Instruction
-        case 0x90:  BCC();  break;
-
-        //BCS Instruction
-        case 0xB0:  BCS();  break;
-
-        //BEQ Instruction
-        case 0xF0:  BEQ();  break;
-
-        //BNE Instruction
-        case 0xD0:  BNE();  break;
-
-        //BMI Instruction
-        case 0x30:  BMI();  break;
-
-        //BPL Instruction
-        case 0x10:  BPL();  break;
-
-        //BVC Instruction
-        case 0x50:  BVC();  break;
-
-        //BVS Instruction
-        case 0x70:  BVS();  break;
-
-        /************************STATUS FLAGS Operations************************/
-        //CLC Instruction
-        case 0x18:  CLC();  break;
-
-        //CLD Instruction
-        case 0xD8:  CLD();  break;
-
-        //CLI Instruction
-        case 0x58:  CLI();  break;
-
-        //CLV Instruction
-        case 0xB8:  CLV();  break;
-
-        //SEC Instruction
-        case 0x38:  SEC();  break;
-
-        //SED Instruction
-        case 0xF8:  SED();  break;
-
-        //SEI Instruction
-        case 0x78:  SEI();  break;
-
-        default:
-            std::cout << "Unknown Opcode = 0x" << std::hex << (int)currentOpcode << std::endl;
-        break;
-    }
+    instructions[currentOpcode].opcode();   // execute the appropriate function  
+    
     /* starting from here, its just for testing LDA , must delete after understanding LDA*/
     std::cout << "A = " << std::hex << (int)A << std::endl;
     std::cout << "X = " << std::hex << (int)X << std::endl;
