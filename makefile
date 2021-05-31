@@ -18,7 +18,6 @@ else
 	HEADER = /usr/include/SDL2/
 	SDL = -lSDL2 -lSDL2_ttf
 	MOVE = mkdir -p obj/ && mv *.o obj/
-	CLEAN_SCREEN = clear
 endif
 
 

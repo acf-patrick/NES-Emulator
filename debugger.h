@@ -31,7 +31,7 @@ class Box
 
     void setLabel(const std::string&);
     void slide(int);
-    void draw();
+    void draw(const SDL_Point&);    // mouse Position
 
     // get text object according to the tag
     Text*& operator[](const std::string&);
@@ -115,6 +115,7 @@ private:
 
     static SDL_Window* window;          // show the debugger on a separated window
     static SDL_Renderer* renderer;
+    SDL_Surface* target;
 
     int& step;
 

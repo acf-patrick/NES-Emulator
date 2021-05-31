@@ -41,7 +41,7 @@ void Box::slide(int diff)
     }
 }
 
-void Box::draw()
+void Box::draw(const SDL_Point& mouse)
 {
     auto renderer = Debugger::renderer;
 
@@ -50,8 +50,6 @@ void Box::draw()
 
     if (label)
     {
-        SDL_Point mouse;
-        SDL_GetMouseState(&mouse.x, &mouse.y); 
         if (SDL_PointInRect(&mouse, &viewport))
         {
             const int offset = 3;

@@ -43,6 +43,8 @@ public:
     };
     std::vector<Instruction> instructions;	// Our instructions, initialized inside the constructor
                                             // Use the instruction hex as index. e.g : ADC absolute  : 0x6D = 109, 6-th line, 13-th column
+    
+    Instruction& getCurrent();      // retrieve current instruction
 
     /***********************LOAD/STORE Operations*********************/
     

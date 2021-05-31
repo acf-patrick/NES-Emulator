@@ -10,8 +10,15 @@ SDL_Renderer* Debugger::renderer = nullptr;
 Debugger::Debugger(Cpu6502* c, int& s) : cpu(*c), step(s)
 {
     const int width = WIDTH+10, height = HEIGHT;
-    window = SDL_CreateWindow("Debugger", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_MOUSE_FOCUS);
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    // window = Nes::window; // simply remove this line to switch to two windows option
+    if (window == Nes::window)
+    {
+        SDL_SetWindowSize(window, WIDTH*2+10, HEIGHT);
+        target = SDL_CreateRGBSurface(0, WIDTH+10, HEIGHT, 32, 0, 0, 0, 0xff);
+        renderer = SDL_CreateSoftwareRenderer(target);
+    } 
+    else 
+        SDL_CreateWindowAndRenderer(width, height, SDL_WINDOW_SHOWN, &window, &renderer);
 
     const SDL_Point padding = { 5, 7 };
     const int interline = 7;
@@ -69,7 +76,7 @@ Debugger::Debugger(Cpu6502* c, int& s) : cpu(*c), step(s)
         prev = mem.push(key, ss.str(), { padding.x, prev->getDown()+interline });
     }
 
-// buttons
+// buttons palette
     Button::colors = {
         { "idle"    , {  69,  69,  69, 255 } },
         { "hover"   , { 120, 120, 120, 255 } },
@@ -103,6 +110,7 @@ Debugger::~Debugger()
 
     Text::destroyFont();
 
+    SDL_FreeSurface(target);
     SDL_DestroyWindow(window);
     SDL_DestroyRenderer(renderer);
 }
@@ -163,11 +171,14 @@ void Debugger::handle(SDL_Event& event)
     if (event.type == SDL_MOUSEBUTTONUP)
         std::cout << event.button.x << ", " << event.button.y << std::endl;
 */
+    SDL_Point mouse;
+    SDL_GetMouseState(&mouse.x, &mouse.y);
+    if (window == Nes::window)
+        mouse.x -= WIDTH;
+
     for (auto& pair : div)
     {
         auto& box = *pair.second;
-        SDL_Point mouse;
-        SDL_GetMouseState(&mouse.x, &mouse.y);
         // The mouse cursor is inside the box
         if (SDL_PointInRect(&mouse, &box.viewport))
         {
@@ -187,7 +198,7 @@ void Debugger::handle(SDL_Event& event)
     {
         auto& button = *pair.second;
         button.state = "idle";
-        if (button.contains({ event.motion.x, event.motion.y }))
+        if (button.contains(mouse))
         {
             if (event.type == SDL_MOUSEMOTION)
                 button.state = "hover";
@@ -216,10 +227,22 @@ void Debugger::draw()
     SDL_RenderClear(renderer);
 
 // time to show what we got
+    SDL_Point mouse;
+    SDL_GetMouseState(&mouse.x, &mouse.y);
+    if (window == Nes::window)
+        mouse.x -= WIDTH;
+
     for (auto& pair : div)
-        pair.second->draw();
+        pair.second->draw(mouse);
     for (auto& pair : buttons)
         pair.second->draw();
+
+    if (window == Nes::window)
+    {
+        SDL_Rect dest = { WIDTH, 0, 0, 0 };
+        SDL_BlitSurface(target, NULL, SDL_GetWindowSurface(window), &dest);
+        SDL_UpdateWindowSurface(window);
+    }
 
     SDL_RenderPresent(renderer);
 }
