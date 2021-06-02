@@ -13,7 +13,7 @@ private:
     std::map<SDL_Scancode, bool> keys;
     bool running;
     
-    int step = 1; // -1 : continue, 1 : just one step, 0 : don't update the CPU
+    int step = 0; // -1 : continue, 1 : just one step, 0 : don't update the CPU
     Cpu6502 *cpu;
     Mmu *mmu;
 

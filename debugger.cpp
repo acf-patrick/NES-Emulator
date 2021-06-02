@@ -2,14 +2,16 @@
 #include "defs.h"
 #include "debugger.h"
 #include <sstream>
+#include <iomanip>
 #include <vector>
 
 SDL_Window* Debugger::window = nullptr;
 SDL_Renderer* Debugger::renderer = nullptr;
 
-Debugger::Debugger(Cpu6502* c, int& s) : cpu(*c), step(s)
+Debugger::Debugger(Cpu6502* c, int& s) : 
+    cpu(*c), step(s)
 {
-    const int width = WIDTH+10, height = HEIGHT;
+    const int width = WIDTH+45, height = HEIGHT-15;
     // window = Nes::window; // simply remove this line to switch to two windows option
     if (window == Nes::window)
     {
@@ -26,7 +28,7 @@ Debugger::Debugger(Cpu6502* c, int& s) : cpu(*c), step(s)
 
 // registers
     div["register"] = new Box({
-        5, 5, width/2+5, height/4 + 10
+        5, 5, width/2+5, 130
     });
     auto& reg = *div["register"];
     // setup
@@ -48,33 +50,14 @@ Debugger::Debugger(Cpu6502* c, int& s) : cpu(*c), step(s)
 
 // instructions
     div["instruction"] = new Box({
-        5, (reg.viewport.y+reg.viewport.h)+5, reg.viewport.w, height/4-10
+        (reg.viewport.w+reg.viewport.x)+5, 5, width - (reg.viewport.w+10)-5, reg.viewport.h
     });
     auto& inst = *div["instruction"];
     inst.setLabel("instructions");
+    inst.label->setColor(76, 204, 89);
+    inst.background = { 13, 17, 23, 255 };
+    inst.boxColor   = { 18, 92, 180, 255 };
     inst.push("first", " ", padding );   // dunno what to put so we'll just show the currentOpc
-    
-// memory
-    // create the box
-    div["memory"] = new Box({
-        (reg.viewport.w+reg.viewport.x)+5, 5, width/2-20, height/2+19
-    });
-    auto& mem = *div["memory"];
-    // setup
-    mem.setLabel("Memory");
-    mem.label->setColor(76, 204, 89);
-    mem.background = { 13, 17, 23, 255 };
-    mem.boxColor   = { 18, 92, 180, 255 };
-
-    prev = mem.push("$1ff", "$1ff", padding);
-    for (Word x = 0x01FE; x >= 0x0100; --x)
-    {
-        std::stringstream ss;
-        ss << '$' << std::hex << x;
-        auto key = ss.str();
-        ss << " : ";
-        prev = mem.push(key, ss.str(), { padding.x, prev->getDown()+interline });
-    }
 
 // buttons palette
     Button::colors = {
@@ -98,6 +81,12 @@ Debugger::Debugger(Cpu6502* c, int& s) : cpu(*c), step(s)
 
     b = buttons["stop"] = new Button("stop");
     b->position = { p->position.x+p->size.x+2*p->padding.x+5, y };
+
+// memory
+    div["memory"] = new MemoryViewer();
+
+    std::cout << "debugger created\n";
+
 }
 Debugger::~Debugger()
 {
@@ -146,18 +135,15 @@ void Debugger::update()
     i["first"]->text = ""; (*i["first"]) << " $" << cpu.currentOpcode << " : " << instruction.mnemonic << " {" << instruction.addressingMode << "} ";
 
     // memory
-    auto& mem = *div["memory"];
-    for (Word address = 0x01FF; address >= 0x0100; --address)
-    {
-        int value = cpu.mmu->readByte(address); // ts mety mpoitra ref atao Byte ts haiko hoe manin
-        std::stringstream ss;
-        ss << '$' << std::hex << address;
-        auto key = ss.str();
-        mem[key]->text = "";
-        ss.str("");
-        ss << std::hex << "$" << address << " : " << value << " [" << std::dec << value << "] ";
-        (*mem[key]) << ss.str();
-    }
+    auto& mem = *dynamic_cast<MemoryViewer*>(div["memory"]);
+    for (Byte i=0; i<0x10; ++i)
+        for (Byte j=0; j<0x10; ++j)
+        {
+            Word address = (mem.page << 8) | (i << 4) | j;
+            auto& t = *mem.memory[i][j];
+            t.text = ""; t << cpu.mmu->readByte(address) << " ";
+        } 
+
 }
 
 void Debugger::handle(SDL_Event& event)
@@ -176,39 +162,66 @@ void Debugger::handle(SDL_Event& event)
     if (window == Nes::window)
         mouse.x -= WIDTH;
 
-    for (auto& pair : div)
+    for (auto& [name, box] : div)
     {
-        auto& box = *pair.second;
         // The mouse cursor is inside the box
-        if (SDL_PointInRect(&mouse, &box.viewport))
+        if (SDL_PointInRect(&mouse, &box->viewport))
         {
             if (event.type == SDL_KEYDOWN)
             {
-                if (event.key.keysym.scancode == SDL_SCANCODE_UP)
-                    box.slide(diff);
-                else if (event.key.keysym.scancode == SDL_SCANCODE_DOWN)
-                    box.slide(-diff);
+                auto s = event.key.keysym.scancode;
+                if (s == SDL_SCANCODE_UP)
+                {
+                    if (name == "memory")
+                    {
+                        auto& mem = *dynamic_cast<MemoryViewer*>(box);
+                        int page = mem.page + 10;
+                        mem.setPage(page%0x100);
+                    }
+                    else
+                        box->slide(diff);
+                }
+                else if (s == SDL_SCANCODE_DOWN)
+                {
+                    if (name == "memory")
+                    {
+                        auto& mem = *dynamic_cast<MemoryViewer*>(box);
+                        int page = mem.page - 10;
+                        mem.setPage(page%0x100);
+                    }
+                    else
+                        box->slide(-diff);
+                }
             }
             if (event.type == SDL_MOUSEWHEEL)
-                box.slide((event.wheel.y>0) ? -diff:diff);
+            {
+                int offset = (event.wheel.y>0)?-1:1;
+                if (name != "memory")
+                    box->slide(offset);
+                else
+                {
+                    auto& mem = *dynamic_cast<MemoryViewer*>(box);
+                    int page = mem.page - offset;
+                    mem.setPage(page%0x100);
+                }
+            }
         }
     }
     
-    for (auto& pair : buttons)
+    for (auto& [name, button] : buttons)
     {
-        auto& button = *pair.second;
-        button.state = "idle";
-        if (button.contains(mouse))
+        button->state = "idle";
+        if (button->contains(mouse))
         {
             if (event.type == SDL_MOUSEMOTION)
-                button.state = "hover";
+                button->state = "hover";
             if (event.type == SDL_MOUSEBUTTONDOWN)
-                button.state = "pressed";
+                button->state = "pressed";
             if (event.type == SDL_MOUSEBUTTONUP)
             {
-                if (pair.first == "step")
+                if (name == "step")
                     step = 1;
-                else if (pair.first == "stop")
+                else if (name == "stop")
                     step = 0;
                 else
                     step = -1;                
@@ -245,4 +258,59 @@ void Debugger::draw()
     }
 
     SDL_RenderPresent(renderer);
+}
+
+MemoryViewer::MemoryViewer() :
+    Box({ 5, 155, WIDTH+35, HEIGHT-190 })
+{
+    setPage(10);
+    Text* prev = nullptr;
+    std::stringstream ss;
+    ss << std::hex << (int)page;
+    std::string head = "$";
+    if (page < 0x10)
+        head.append(1, '0');
+    head += ss.str();
+    for (Byte i=0; i < 0x10; ++i)
+    {
+        ss.str("");
+        if (!i) ss << "00"; else ss << (i<<4);
+        auto h = head + ss.str();
+        int y = 5+((prev==nullptr)?0:prev->getDown());
+        prev = texts[h] = new Text(h + ": ", { 5, y }, viewport);
+        for (Byte j=0; j < 0x10; ++j)
+        {
+            ss.str("");
+            ss << (i<<4 | j);
+            prev = memory[i][j] = new Text("00 ", { prev->getRight(), prev->getY() }, viewport);
+        }
+    } 
+}
+
+void MemoryViewer::setPage(Byte p)
+{
+    page = p;
+    std::stringstream ss;
+    ss << std::hex << (int)page;
+    setLabel(ss.str() + " page"); // update header
+
+    std::map<std::string, Text*> m;
+    for (auto& [key, text] : texts)
+    {
+        std::string tmp = ss.str() + key.substr(3);
+        if (page < 0x10)
+            tmp = "0"+tmp;
+        tmp = "$"+tmp;
+        m[tmp] = text;
+        text->setText(tmp+": ");
+    }
+    texts.clear();
+    texts.merge(m);
+}
+
+void MemoryViewer::draw(const SDL_Point& mouse) 
+{
+    Box::draw(mouse);
+    for (int i = 0; i <= 0xff; ++i)
+        memory[i>>4][i&0xf]->draw();
 }

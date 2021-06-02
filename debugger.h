@@ -7,16 +7,16 @@
 #include "SDL2/include/SDL2/SDL_ttf.h"
 
 class Text;
-class Debugger;
 
 // Supposed to be only used for debugging
 class Box
 {
+public:
     SDL_Rect drag;                                  // attach to the texts, it will help us to drag them together (up or down)
     SDL_Rect viewport;                              // the box
     std::map<std::string, Text*> texts;             // the texts inside
 
-    SDL_Color background = { 15, 16, 17, 255 },     // Drak
+    SDL_Color background = { 15, 16, 17, 255 },     // Dark
                 boxColor = { 255, 255, 255, 255 };  // Color of the bounding box
     
     // boundaries of the text list
@@ -27,11 +27,11 @@ class Box
     Text*  label = nullptr;
 
     Box(const SDL_Rect&);                            // the box as parameter
-    ~Box();
+    virtual ~Box();
 
     void setLabel(const std::string&);
+    virtual void draw(const SDL_Point&);    // mouse Position
     void slide(int);
-    void draw(const SDL_Point&);    // mouse Position
 
     // get text object according to the tag
     Text*& operator[](const std::string&);
@@ -39,13 +39,12 @@ class Box
     // add text
     Text*  push(const std::string&, const std::string&, const SDL_Point&);
 
-friend class Debugger;
 };
 
 // Supposed to be only used for debugging
 class Text
 {
-protected:
+public: 
     static SDL_Rect screen;
     static TTF_Font* font;
     
@@ -64,14 +63,13 @@ protected:
 
     static SDL_Color getBackground();
     static void setBackground(Uint8, Uint8, Uint8, Uint8 a = 255);
-
-public:    
+   
     Text(const std::string&, const SDL_Point&, SDL_Rect&);
     Text(const std::string&, const SDL_Point&);
     ~Text();
 
     virtual void draw();                // draw inside the viewport
-    void draw(const SDL_Rect&); // draw inside what?
+    void draw(const SDL_Rect&);         // draw inside what?
 
     void setColor(Uint8, Uint8, Uint8, Uint8 a = 255);
 
@@ -82,9 +80,6 @@ public:
     int getY();
     int getDown();
     int getRight();
-
-friend class Box;
-friend class Debugger;
 };
 
 // Append a Word
@@ -106,16 +101,28 @@ class Button : private Text
 friend class Debugger;
 };
 
+class MemoryViewer : public Box
+{
+public:
+    Text* memory[0x10][0x10] = { {nullptr} };
+    Byte page;
+
+    MemoryViewer();
+    void setPage(Byte);
+    void draw(const SDL_Point&) override;
+};
+
 class Debugger
 {
 private:
-    std::map<std::string, Box*> div;    // divers block dans le debugger
+    std::map<std::string, Box*> div;
+    MemoryViewer* memView;
     std::map<std::string, Button*> buttons;
     Cpu6502& cpu;
 
     static SDL_Window* window;          // show the debugger on a separated window
     static SDL_Renderer* renderer;
-    SDL_Surface* target;
+    SDL_Surface* target = NULL;
 
     int& step;
 

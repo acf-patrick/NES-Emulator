@@ -2,6 +2,7 @@
 #include "defs.h"
 #include "debugger.h"
 #include <sstream>
+#include <iomanip>
 #include <iostream>
 
 TTF_Font* Text::font = nullptr;
@@ -131,7 +132,7 @@ Text& operator<< (Text& text, const std::string& s)
 Text& operator<< (Text& text, Word n)
 {
     std::stringstream ss;
-    ss << std::hex << n;
+    ss << std::hex << std::setw((n < 0x100)?2:4) << std::setfill('0') << n;
     text << ss.str();
     return text;
 }

@@ -79,12 +79,16 @@ void Box::draw(const SDL_Point& mouse)
 
 void Box::setLabel(const std::string& l)
 {
+    if (label)
+    {
+        label->setText(l);
+        return;
+    }
+
     label = new Text(l, {0, viewport.y});
     // center it on top of the box
     label->position.x = viewport.x + 0.5*(viewport.w - label->size.x);
-    
     // push the box down
     viewport.y += label->size.y;
     drag.y += label->size.y;
-
 }
